@@ -240,18 +240,9 @@ def add_to_path(p):
         sys.path.insert(0, p)
 
 
-def add_bkovacs_to_path():
-    bkovacs_caffe_python_root = os.path.join(settings.CAFFE_ROOT, 'python', 'bkovacs')
-    add_to_path(bkovacs_caffe_python_root)
-
-
 def add_caffe_to_path():
     caffe_python_root = os.path.join(settings.CAFFE_ROOT, 'python')
     add_to_path(caffe_python_root)
-
-
-def add_caffe_matclass_to_path():
-    add_to_path(settings.CAFFE_MATCLASS_ROOT)
 
 
 def get_worker_name():
