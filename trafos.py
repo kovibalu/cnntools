@@ -1,9 +1,9 @@
 import os
 
 import numpy as np
-from scipy.ndimage.interpolation import zoom
 
 from cnntools.utils import add_caffe_matclass_to_path
+from scipy.ndimage.interpolation import zoom
 
 
 def fet_avg_trafo(fet, mask_resized):
