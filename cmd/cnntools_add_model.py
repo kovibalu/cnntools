@@ -12,6 +12,11 @@ class Command(BaseCommand):
     help = 'Adds a CaffeCNN model to the database'
 
     def handle(self, *args, **option):
+        if len(args) != 5:
+            print 'Incorrect number of arguments!'
+            print 'Usage: ./manage.py cnntools_add_model [options] %s' % Command.args
+            return
+
         netid = args[0]
         modelfile_relpath = args[1]
         modelfile_path = os.path.join(settings.CAFFE_ROOT, modelfile_relpath)

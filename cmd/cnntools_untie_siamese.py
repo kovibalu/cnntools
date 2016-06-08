@@ -11,6 +11,11 @@ class Command(BaseCommand):
     help = 'Copies weights from one branch of the siamese network to the other, so it can be trained with untied weights'
 
     def handle(self, *args, **option):
+        if len(args) != 5:
+            print 'Incorrect number of arguments!'
+            print 'Usage: ./manage.py cnntools_untie_siamese [options] %s' % Command.args
+            return
+
         trainingfile_source_relpath = args[0]
         weights_source_relpath = args[1]
         trainingfile_target_relpath = args[2]

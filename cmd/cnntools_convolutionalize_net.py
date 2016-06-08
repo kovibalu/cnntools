@@ -8,6 +8,11 @@ class Command(BaseCommand):
     help = 'Converts a net into a fully convolutional net by transforming all inner product layers to convolutional layers'
 
     def handle(self, *args, **option):
+        if len(args) != 4:
+            print 'Incorrect number of arguments!'
+            print 'Usage: ./manage.py cnntools_convolutionalize_net [options] %s' % Command.args
+            return
+
         deployfile_source_relpath = args[0]
         weights_source_relpath = args[1]
         deployfile_target_relpath = args[2]
