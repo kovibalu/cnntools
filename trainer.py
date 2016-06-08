@@ -3,10 +3,10 @@ import os
 import time
 
 from cnntools import caffefileproc
-from cnntools.common_utils import ensuredir
+from cnntools.common_utils import ensuredir, import_modules
 from cnntools.models import CaffeCNNTrainingRun
 from cnntools.snapshot_utils import upload_snapshot
-from cnntools.utils import add_caffe_to_path, random_file_from_content
+from cnntools.utils import add_to_path, add_caffe_to_path, random_file_from_content
 from django.conf import settings
 
 
@@ -170,6 +170,9 @@ def train_network(solver_params, solverfile_path, options,
     verbose = False
     add_caffe_to_path()
     import caffe
+
+    for p in settings.TRAINING_EXTRA_PYTHON_PATH:
+        add_to_path(p)
 
     restore = False
 
