@@ -1,0 +1,24 @@
+{% load humanize %}
+{% if caffe_cnn_trrun.snapshots.count == 0 %}
+<p>There are no snapshots associated with this object.</p>
+{% else %}
+<table class="table table-hover">
+	<thead>
+		<tr>
+			<th>ID</th>
+			<th>Date Added</th>
+			<th>Iteration Number</th>
+			<th>SHA1</th>
+		</tr>
+	</thead>
+
+	{% for entry in caffe_cnn_trrun.snapshots.all %}
+	<tr>
+		<td><a href="{{ entry.model_snapshot.url }}">{{ entry.id }}</a></td>
+		<td>{{ entry.added|naturaltime }}</td>
+		<td>{{ entry.iteration }}</td>
+		<td>{{ entry.sha1 }}</td>
+	</tr>
+	{% endfor %}
+</table>
+{% endif %}

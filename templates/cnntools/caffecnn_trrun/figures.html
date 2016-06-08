@@ -1,0 +1,10 @@
+{% for name, svg in svgs.items %}
+<h3>{{ name }}</h3>
+<div class="row" style="margin-top:20px">
+	<div class="span9">
+		<div class="thumbnail">
+			{{ svg|safe }}
+		</div>
+	</div>
+</div>
+{% endfor %}

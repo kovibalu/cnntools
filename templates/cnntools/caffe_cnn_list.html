@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load compress %}
+{% load humanize %}
+
+{% block header %}
+<div class="jumbotron subhead" id="overview">
+	<div class="container">
+		<h1>Caffe CNN Models</h1>
+	</div>
+</div>
+{% endblock %}
+
+{% block content %}
+<table class="table table-hover">
+	<thead>
+		<tr>
+			<th></th>
+			<th>Date Added</th>
+			<th>Network Name</th>
+			<th>Description</th>
+		</tr>
+	</thead>
+
+	{% for entry in entries %}
+	<tr>
+		<td>
+			<a href="{% url 'cnntools-caffe-cnn-detail' entry.id %}" role="button" class="btn" target="_blank">Details</a>
+		</td>
+		<td>{{ entry.added|naturaltime }}</td>
+		<td>{{ entry.netid }}</td>
+		<td>{{ entry.description }}</td>
+	</tr>
+	{% endfor %}
+</table>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% load humanize %}
+
+<table class="table table-hover">
+	<thead>
+		<tr>
+			<th></th>
+			<th>Date Added</th>
+			<th>Iteration Number</th>
+		</tr>
+	</thead>
+
+	{% for entry in caffe_cnn.training_runs.all %}
+	<tr>
+		<td>
+			<a href="{% url 'cnntools-caffe-cnn-trainingrun-detail' entry.id %}" role="button" class="btn" target="_blank">Details</a>
+		</td>
+		<td>{{ entry.added|naturaltime }}</td>
+		<td>{{ entry.final_iteration }}</td>
+	</tr>
+	{% endfor %}
+</table>

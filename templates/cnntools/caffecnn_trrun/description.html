@@ -1,0 +1,14 @@
+{% load humanize %}
+
+<p><b>Net Name: </b><a href="{% url 'cnntools-caffe-cnn-detail' caffe_cnn_trrun.net.id %}">{{ caffe_cnn_trrun.net.netid }}</a></p>
+<p><b>Net Description:</b> {{ caffe_cnn_trrun.net.description }} </p>
+<p><b>Start Date:</b> {{ caffe_cnn_trrun.added|naturaltime }} </p>
+{% if caffe_cnn_trrun.is_finished %}
+<p><b><em>Finished</em>:</b> {{ caffe_cnn_trrun.modified|naturaltime }} </p>
+<p><b><em>Running time</em>:</b> {{ caffe_cnn_trrun.runtime }} </p>
+{% else %}
+<p><b>Last Update:</b> {{ caffe_cnn_trrun.modified|naturaltime }} </p>
+<p><b>Estimated Time Remaining:</b> {{ caffe_cnn_trrun.est_rem_time }} </p>
+{% endif %}
+<p><b>Iteration Number:</b> {{ caffe_cnn_trrun.final_iteration }} </p>
+<p><b>Maximum Iteration Number:</b> {{ caffe_cnn_trrun.max_iteration }} </p>
