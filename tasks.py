@@ -1,26 +1,29 @@
 import os
 
 import numpy as np
-from django.conf import settings
 
 from celery import shared_task
-from cnntools.descstore import DescriptorStoreMemmap
+from cnntools import packer
+from cnntools.common_utils import progress_bar
 from cnntools.fet_extractor import load_fet_extractor
 from cnntools.models import CaffeCNN
 from cnntools.redis_aggregator import batch_ready
 from cnntools.snapshot_utils import download_snapshot
-from cnntools.trafos import (apply_crf, crf_prob, gram_fets, mean_std_fets,
-                             minc_padding, spatial_avg_fets)
+from cnntools.timer import Timer
+from cnntools.trafos import (gram_fets, mean_std_fets, dummy_image_trafo_func,
+                             spatial_avg_fets)
 from cnntools.trainer import start_training
 from cnntools.utils import create_default_trrun, get_worker_gpu_device_id
-from cnntools import packer
-from cnntools.common_utils import progress_bar
-from cnntools.timer import Timer
+from django.conf import settings
 
 
 def get_image_trafo_types():
+    # Add image transformations you may want to run before passing the image to
+    # the CNN for feature computation/prediction
+    # key: name of the transformation, value: a function which will be called
+    # with the image as input
     return {
-        'MINC-padding': minc_padding,
+        'dummy': dummy_image_trafo_func,
     }
 
 
@@ -29,7 +32,6 @@ def get_fet_trafo_types():
         'MINC-spatial-avg': spatial_avg_fets,
         'MINC-gram': gram_fets,
         'MINC-mean-std': mean_std_fets,
-        'MINC-crf-prob': crf_prob,
     }
 
 
@@ -161,75 +163,3 @@ def compute_cnn_features_gpu_task(
     # Save results in redis
     batch_ready(task_id, batch_id, packer.packb(fets, settings.API_VERSION))
 
-
-@shared_task(queue='local-cpu')
-def compute_crf_features_task(
-    item_type,
-    task_id,
-    batch_id,
-    id_list,
-    feature_name_list,
-    kwa,
-):
-    '''
-    Computes the features for a list of model_class type objects (for the
-    associated images), then sends the computed features to the redis server.
-    The accumulator script will collect these and save them as a numpy array on
-    disk.
-
-    :param item_type: The class for the model which holds the information
-    which we use the retrieve the images the feature will be computed on
-
-    :param task_id: ID of the task which will be used as a key to put the
-    batch_id as a completed ID in redis
-
-    :param batch_id: ID of the batch which will be used as a key to put the
-    results in redis
-
-    :param id_list: List of item_type IDs
-
-    :param feature_name_list: The features' name in the network which will be
-    extracted
-
-    :param kwa: The parameters to pass to the feature computer
-    function.
-    '''
-    desc_store = DescriptorStoreMemmap(kwa['desc_dir'], readonly=True)
-    # This doesn't preserve order!
-    items = item_type.objects.in_bulk(id_list).values()
-
-    image_trafo_types = get_image_trafo_types()
-    fet_trafo_types = get_fet_trafo_types()
-
-    fets = []
-    print 'Computing features for {} items...'.format(len(items))
-    for item in progress_bar(items):
-        if kwa['image_trafo_type_id']:
-            with Timer('Image transformation'):
-                img = image_trafo_types[kwa['image_trafo_type_id']](item, **kwa['image_trafo_kwargs'])
-        else:
-            img = item.photo.image_512
-
-        # TODO: resize to the correct multiple of stride, get min size from
-        # params
-        # Compute the expected output size
-        h, w = img.shape[:2]
-        prob_width = w // kwa['crf_params']['stride']
-        prob_height = h // kwa['crf_params']['stride']
-
-        prob = desc_store.get(item.id)
-        prob = np.reshape(prob, (kwa['label_count'], prob_height, prob_width))
-
-        with Timer('CRF prediction'):
-            labels_crf = apply_crf(item, img, prob.copy(), kwa['crf_params'])
-
-        fetdic = {feature_name_list[0]: labels_crf}
-
-        if kwa['fet_trafo_type_id']:
-            with Timer('Feature transformation'):
-                fetdic = fet_trafo_types[kwa['fet_trafo_type_id']](item, img, fetdic, **kwa['fet_trafo_kwargs'])
-
-        fets.append((item.id, fetdic))
-
-    # Save results in redis
-    batch_ready(task_id, batch_id, packer.packb(fets, settings.API_VERSION))

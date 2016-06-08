@@ -1,16 +1,13 @@
 import os
 from optparse import make_option
 
-from django.conf import settings
-from django.core.management.base import BaseCommand
-
 from cnntools.models import CaffeCNN
 from cnntools.tasks import start_training_task
-from cnntools.utils import random_file_from_content
+from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
-    args = '<netid> <base_lr?> <weights?> <cpu?> <debug_info?>'
+    args = '<netid> <local?> <base_lr?> <weights?> <cpu?> <debug_info?>'
     help = 'Starts training a CaffeCNN model'
 
     option_list = BaseCommand.option_list + (
@@ -88,3 +85,4 @@ class Command(BaseCommand):
                 netid=netid,
                 options=options,
             )
+

@@ -1,3 +1,0 @@
-# custom progressbar fork
--I git+https://github.com/seanbell/python-progressbar
-

@@ -63,6 +63,8 @@ def extract_batchsize_testsetsize(model_file_content):
     ]
     for layer in model_params.layer:
         if layer.type in layer_types:
+            if not layer.include:
+                continue
             if layer.include[0].phase == caffe_pb2.TEST:
                 if layer.type == 'Python':
                     # Try to parse json

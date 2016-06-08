@@ -1,9 +1,19 @@
-import os
-
 import numpy as np
 
-from cnntools.utils import add_caffe_matclass_to_path
 from scipy.ndimage.interpolation import zoom
+
+
+def dummy_image_trafo_func(item, params):
+    '''This is just a dummy function to show the parameters we expect in a
+    image transformation function
+
+    :param item: A database object which has an associated image
+    :param params: A dictionary with parameters which might specify how we
+    perform the transformation
+
+    :return The retrieved and transformed image
+    '''
+    raise NotImplemented()
 
 
 def fet_avg_trafo(fet, mask_resized):
@@ -65,30 +75,17 @@ def gram_fets(item, img, fetdic, fets_to_trafo, desired_label, prob_fet_name):
 
 
 def mean_std_fets(item, img, fetdic, fets_to_trafo, desired_label,
-                  prob_fet_name, use_crf, crf_params):
+                  prob_fet_name):
     '''Computes the mean and standard deviation of the features across spatial
     location for the pixels which predicted the desired_label'''
     return trafo_fets_with_prob_mask(
         item, img, fetdic, fets_to_trafo, desired_label, prob_fet_name,
-        use_crf, crf_params, comp_mean_std
+        comp_mean_std
     )
 
 
-def crf_prob(item, img, fetdic, fets_to_trafo, prob_fet_name, crf_params):
-    prob = fetdic[prob_fet_name]
-    assert prob.shape[0] == 1
-    prob = np.squeeze(prob)
-
-    labels_crf = apply_crf(item, img, prob, crf_params)
-
-    return {
-        prob_fet_name: fetdic[prob_fet_name],
-        'img': labels_crf,
-    }
-
-
 def trafo_fets_with_prob_mask(item, img, fetdic, fets_to_trafo, desired_label,
-                              prob_fet_name, use_crf, crf_params, trafo_func):
+                              prob_fet_name, trafo_func):
     '''Transforms feature maps for the pixels which predicted the
     desired_label'''
     # Note: Compute mask, the first axis should be 1! (we fed only one image
@@ -97,13 +94,7 @@ def trafo_fets_with_prob_mask(item, img, fetdic, fets_to_trafo, desired_label,
     assert prob.shape[0] == 1
     prob = np.squeeze(prob)
 
-    # "Clean up" the probability predictions before we use them for masking
-    # with a CRF
-    if use_crf:
-        labels_crf = apply_crf(item, img, prob, crf_params)
-        mask = labels_crf == desired_label
-    else:
-        mask = np.argmax(prob, axis=0) == desired_label
+    mask = np.argmax(prob, axis=0) == desired_label
 
     # Resize mask to the size of the feature maps
     fetdic_final = {}
@@ -125,59 +116,3 @@ def trafo_fets_with_prob_mask(item, img, fetdic, fets_to_trafo, desired_label,
         fetdic_final[name] = trafo_func(fet, mask_resized)
 
     return fetdic_final
-
-
-def apply_crf(item, img, prob, crf_params):
-    '''Applies CRF with the specified crf_params on the probability map given
-    the image'''
-    if not crf_params:
-        raise ValueError('crf_params has to be specified!')
-
-    print 'img.shape', img.shape
-    print 'prob.shape', prob.shape
-    h, w = img.shape[:2]
-    label_count, prob_height, prob_width = prob.shape
-    if 'ignore_labels' in crf_params:
-        # remove ignored classes, so the CRF won't predict them
-        prob[crf_params['ignore_labels']] = 0.0
-
-    zoom_factor = (
-        1,
-        float(h) / prob_height,
-        float(w) / prob_width,
-    )
-    # Bilinear interpolation
-    prob_resized = zoom(prob, zoom=zoom_factor, order=1)
-
-    add_caffe_matclass_to_path()
-    from general_densecrf import densecrf_map
-
-    # TODO: Now we are using the MINC CRF, we should generalize it to any
-    # densecrf!
-    labels_crf = densecrf_map(img, prob_resized.copy(), crf_params)
-    #save_crf_predictions(item, img, prob_resized, labels_crf)
-
-    return labels_crf
-
-
-def save_crf_predictions(item, img, prob_resized, labels_crf):
-    from scipy.misc import imsave
-    from matclass import dataset, accuracy
-    from common.utils import ensuredir
-    out_dir = 'crf-debug'
-    ensuredir(out_dir)
-
-    for l in range(prob_resized.shape[0]):
-        #if l != dataset.NAME_TO_NETCAT['wood']:
-            #continue
-        img_mask = prob_resized[l, :, :][:, :, np.newaxis]
-        prob_img = np.array([1, 0, 0])[np.newaxis, np.newaxis, :] * img_mask
-        new_img = prob_img * 0.5 + img * 0.5
-        imsave(
-            os.path.join(out_dir, '%s-prob-%s-crf.jpg' % (item.id, dataset.NETCAT_TO_NAME[l])),
-            new_img
-        )
-    imsave(
-        os.path.join(out_dir, '%s-labels-crf.jpg' % item.id),
-        accuracy.labels_to_color(labels_crf)
-    )

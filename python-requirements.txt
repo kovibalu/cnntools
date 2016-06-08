@@ -1,0 +1,10 @@
+# custom progressbar fork
+-I git+https://github.com/seanbell/python-progressbar
+
+# Feture computation and aggregation
+h5py
+redis
+msgpack-python
+msgpack_numpy
+protobuf
+
