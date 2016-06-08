@@ -1,6 +1,5 @@
 import os
 
-from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from cnntools.models import CaffeCNN, CaffeCNNTrainingRun
@@ -22,8 +21,7 @@ class Command(BaseCommand):
         netid = args[0]
         trainingrun_id = int(args[1])
         iteration = int(args[2])
-        weightfile_relpath = args[3]
-        weightfile_path = os.path.join(settings.CAFFE_ROOT, weightfile_relpath)
+        weightfile_path = args[3]
 
         if not CaffeCNN.objects.filter(netid=netid).exists():
             raise ValueError(

@@ -3,13 +3,13 @@ import os
 from tempfile import NamedTemporaryFile
 
 import numpy as np
-from django.conf import settings
 
 from cnntools.caffefileproc import parse_model_definition_file
 from cnntools.common_utils import ensuredir, safe_save_content
 from cnntools.models import CaffeCNNSnapshot, CaffeCNNTrainingRun
 from cnntools.utils import (add_caffe_to_path, get_file_content,
                             named_file_from_content)
+from django.conf import settings
 
 
 def upload_snapshot(caffe_cnn_trrun_id, snapshot_path, it):
@@ -87,10 +87,14 @@ def download_snapshot(snapshot_id, transfer):
             snapshot_dir,
             'snapshot-conv.caffemodel'
         )
-        if not os.path.exists(transferred_weights_relpath):
+        if not os.path.exists(os.path.join(settings.CAFFE_ROOT, transferred_weights_relpath)):
             transfer_weights(
-                snapshot_dirpath, trainfile_relpath, weights_relpath, deployfile_relpath,
-                transferred_weights_relpath, verbose=True
+                temp_dir=snapshot_dirpath,
+                deployfile_source_path=os.path.join(settings.CAFFE_ROOT, trainfile_relpath),
+                weights_source_path=os.path.join(settings.CAFFE_ROOT, weights_relpath),
+                deployfile_target_path=os.path.join(settings.CAFFE_ROOT, deployfile_relpath),
+                weights_target_path=os.path.join(settings.CAFFE_ROOT, transferred_weights_relpath),
+                verbose=True,
             )
     else:
         transferred_weights_relpath = weights_relpath
@@ -147,11 +151,9 @@ def print_net_weight_stats(net):
         print '\tbias mean: %f +/- %f' % (np.mean(weights[1].data), np.std(weights[1].data))
 
 
-def transfer_weights(temp_dir, deployfile_source_relpath, weights_source_relpath,
-                     deployfile_target_relpath, weights_target_relpath,
+def transfer_weights(temp_dir, deployfile_source_path, weights_source_path,
+                     deployfile_target_path, weights_target_path,
                      verbose=True):
-    deployfile_source_path = os.path.join(settings.CAFFE_ROOT, deployfile_source_relpath)
-    deployfile_target_path = os.path.join(settings.CAFFE_ROOT, deployfile_target_relpath)
 
     deployfile_source = parse_model_definition_file(deployfile_source_path)
 
@@ -163,12 +165,12 @@ def transfer_weights(temp_dir, deployfile_source_relpath, weights_source_relpath
     import caffe
     net_source = caffe.Net(
         deployfile_source_path,
-        os.path.join(settings.CAFFE_ROOT, weights_source_relpath),
+        weights_source_path,
         caffe.TEST
     )
     net_target = caffe.Net(
         deployfile_target_path,
-        os.path.join(settings.CAFFE_ROOT, weights_source_relpath),
+        weights_source_path,
         caffe.TEST
     )
 
@@ -201,6 +203,4 @@ def transfer_weights(temp_dir, deployfile_source_relpath, weights_source_relpath
     # Use the temp file's name
     net_target.save(f_temp.name)
     # Move it to the final destination in an atomic operation
-    os.rename(
-        f_temp.name, os.path.join(settings.CAFFE_ROOT, weights_target_relpath)
-    )
+    os.rename(f_temp.name, weights_target_path)

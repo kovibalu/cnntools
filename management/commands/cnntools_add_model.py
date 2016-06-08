@@ -1,10 +1,8 @@
 import os
 
-from django.conf import settings
-from django.core.management.base import BaseCommand
-
 from cnntools.models import CaffeCNN
 from cnntools.utils import random_file_from_content
+from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
@@ -18,12 +16,9 @@ class Command(BaseCommand):
             return
 
         netid = args[0]
-        modelfile_relpath = args[1]
-        modelfile_path = os.path.join(settings.CAFFE_ROOT, modelfile_relpath)
-        solverfile_relpath = args[2]
-        solverfile_path = os.path.join(settings.CAFFE_ROOT, solverfile_relpath)
-        deployfile_relpath = args[3]
-        deployfile_path = os.path.join(settings.CAFFE_ROOT, deployfile_relpath)
+        modelfile_path = args[1]
+        solverfile_path = args[2]
+        deployfile_path = args[3]
         description = args[4]
 
         # If the files are already there, delete them first
@@ -43,3 +38,4 @@ class Command(BaseCommand):
                 'deploy_file': random_file_from_content(open(deployfile_path).read()),
             }
         )
+
