@@ -10,10 +10,8 @@ from cnntools.utils import random_file_from_content
 class Command(BaseCommand):
     args = '<netid> <modelfile_relpath> <solverfile_relpath> <deployfile_relpath> <description>'
     help = 'Adds a CaffeCNN model to the database'
-    asdlkjasdfl;k
 
     def handle(self, *args, **option):
-        print 'asdklfklhafslhk;asfklhasdfl;kh'
         if len(args) != 5:
             print 'Incorrect number of arguments!'
             print 'Usage: ./manage.py cnntools_add_model [options] %s' % Command.args
