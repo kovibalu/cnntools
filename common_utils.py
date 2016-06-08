@@ -4,14 +4,15 @@ import os
 import uuid
 from tempfile import NamedTemporaryFile
 
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models.query import QuerySet
 from django.utils.deconstruct import deconstructible
 from django.utils.timezone import now
-
 from progressbar import (AdaptiveETA, Bar, FileTransferSpeed, ProgressBar,
                          SimpleProgress)
+from queued_storage.utils import import_attribute
 
 
 def progress_bar(l, show_progress=True):
@@ -151,4 +152,8 @@ class ModelBase(EmptyModelBase):
     class Meta:
         abstract = True
         ordering = ['-id']
+
+
+def get_opensurfaces_storage():
+    return import_attribute(settings.OPENSURFACES_FILE_STORAGE)()
 
