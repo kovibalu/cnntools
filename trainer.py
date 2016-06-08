@@ -3,7 +3,7 @@ import os
 import time
 
 from cnntools import caffefileproc
-from cnntools.common_utils import ensuredir, import_modules
+from cnntools.common_utils import ensuredir
 from cnntools.models import CaffeCNNTrainingRun
 from cnntools.snapshot_utils import upload_snapshot
 from cnntools.utils import add_to_path, add_caffe_to_path, random_file_from_content
