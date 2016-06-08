@@ -57,6 +57,11 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **options):
+        if len(args) != 1:
+            print 'Incorrect number of arguments!'
+            print 'Usage: ./manage.py cnntools_start_training [options] %s' % Command.args
+            return
+
         netid = args[0]
 
         if not CaffeCNN.objects.filter(netid=netid).exists():

@@ -14,6 +14,11 @@ class Command(BaseCommand):
             ' create a dummy trainingrun to accommodate the snapshot.')
 
     def handle(self, *args, **option):
+        if len(args) != 4:
+            print 'Incorrect number of arguments!'
+            print 'Usage: ./manage.py cnntools_add_snapshot [options] %s' % Command.args
+            return
+
         netid = args[0]
         trainingrun_id = int(args[1])
         iteration = int(args[2])
