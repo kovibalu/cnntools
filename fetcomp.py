@@ -6,8 +6,7 @@ from cnntools.descriptor_aggregator import DescriptorAggregator
 from cnntools.descstore import DescriptorStoreHdf5
 from cnntools.models import CaffeCNNSnapshot
 from cnntools.redis_aggregator import patch_interrupt_signal, detach_patch_interrupt_signal
-from cnntools.tasks import (compute_cnn_features_gpu_task,
-                            compute_crf_features_task)
+from cnntools.tasks import compute_cnn_features_gpu_task
 from cnntools.common_utils import iter_batch, progress_bar_widgets
 
 
@@ -390,96 +389,3 @@ def compute_cnn_features(
         fetcomp_kwargs,
         slug,
     )
-
-
-def compute_crf_features(
-    desc_rootpath,
-    item_type,
-    item_ids,
-    node_batchsize,
-    aggr_batchsize,
-    feature_name_list,
-    num_dims_list,
-    crf_params,
-    label_count,
-    desc_dir,
-    slug,
-    image_trafo_type_id=None,
-    image_trafo_kwargs=None,
-    fet_trafo_type_id=None,
-    fet_trafo_kwargs=None,
-):
-    """
-    Runs the dense CRF on the specified features and images.
-
-    :param desc_rootpath: The root path of the directory where the computed
-    features will be stored in.
-
-    :param item_type: The type of the model class for the item which are
-    classified (e.g. FgPhoto). This class should have 'title', 'photo'
-    attributes/properties. The photo attribute should have most of the Photo
-    model's fields. It is advised to use an actual Photo instance here.
-
-    :param item_ids: List (or numpy array) of ids into the :ref:`item_type`
-    table. The length of this list is the same as the length of :ref:`y_true`
-    list and they have the same order.
-
-    :param node_batchsize: The number of feature computations to put in one
-    task executed on a worker node.
-
-    :param aggr_batchsize: The number of batches to wait for before forcing the
-    aggregator to download and remove those batches from redis.
-
-    :param feature_name_list: The features' names in the network which will be
-    extracted.
-
-    :param num_dims_list: Dimensions of the computed features.
-
-    :param crf_params: Parameters used by the CRF algorithm. TODO: More
-    documentation here.
-
-    :param label_count: The number of classification labels.
-
-    :param desc_dir: The directory where the descriptors which will be used by
-    the CRF are
-
-    :param slug: The unique humanly readable name associated with the feature
-    computation task.
-
-    :param image_trafo_type_id: Image transformation primitive. Currently the
-    user can select from:
-        ['MINC-padding']
-
-    :param image_trafo_kwargs: Keyword arguments for the chosen image
-    transformation primitive.
-
-    :param fet_trafo_type_id: Feature transformation primitive. Currently the
-    user can select from:
-        ['MINC-spatial-avg', 'MINC-gram', 'MINC-mean-std']
-
-    :param fet_trafo_kwargs: Keyword arguments for the chosen feature
-    transformation primitive.
-    """
-    fetcomp_kwargs = {
-        'crf_params': crf_params,
-        'label_count': label_count,
-        'desc_dir': desc_dir,
-        'image_trafo_type_id': image_trafo_type_id,
-        'image_trafo_kwargs': image_trafo_kwargs,
-        'fet_trafo_type_id': fet_trafo_type_id,
-        'fet_trafo_kwargs': fet_trafo_kwargs,
-    }
-
-    return compute_features(
-        desc_rootpath,
-        item_type,
-        item_ids,
-        node_batchsize,
-        aggr_batchsize,
-        feature_name_list,
-        num_dims_list,
-        compute_crf_features_task,
-        fetcomp_kwargs,
-        slug,
-    )
-
