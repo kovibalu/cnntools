@@ -1,0 +1,11 @@
+{% for plot_dic in weight_plots %}
+<h3>{{ plot_dic.title }}</h3>
+<div class="row" style="margin-top:20px">
+	<div class="span9">
+		<p>Shape: ({{ plot_dic.shape }})</p>
+		<div class="thumbnail">
+			{{ plot_dic.svg|safe }}
+		</div>
+	</div>
+</div>
+{% endfor %}

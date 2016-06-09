@@ -14,7 +14,7 @@
 
 	{% for entry in caffe_cnn_trrun.snapshots.all %}
 	<tr>
-		<td><a href="{{ entry.model_snapshot.url }}">{{ entry.id }}</a></td>
+		<td><a href="{% url 'cnntools-caffe-cnn-snapshot-detail' entry.id %}">{{ entry.id }}</a></td>
 		<td>{{ entry.added|naturaltime }}</td>
 		<td>{{ entry.iteration }}</td>
 		<td>{{ entry.sha1 }}</td>

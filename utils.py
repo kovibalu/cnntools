@@ -1,5 +1,5 @@
-import json
 import collections
+import json
 import os
 import random
 import re
@@ -8,6 +8,7 @@ import sys
 import uuid
 
 import numpy as np
+
 from django.conf import settings
 from django.core.files import File
 
@@ -233,6 +234,52 @@ def get_svgs_from_output(outputs, output_names, simplified=False):
         )
 
     return svgs
+
+
+def plot_svg_net_weights(weights_arr, title, xlabel, ylabel):
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+
+    plt.clf()
+    sns.set_style('darkgrid')
+
+    plt.plot(weights_arr)
+
+    plt.title(title[:30])
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+
+    buf = StringIO.StringIO()
+    plt.savefig(buf, format='svg', bbox_inches='tight')
+    plt.clf()
+
+    return buf.getvalue()
+
+
+def get_svgs_from_net(net):
+    weight_plots = []
+    for layer_name, weights in net.params.iteritems():
+        for i, label in enumerate(['weights', 'biases']):
+            title = '%s - %s' % (layer_name, label)
+            svg = plot_svg_net_weights(
+                weights_arr=np.ravel(weights[i].data),
+                title=title,
+                xlabel='Weight element index',
+                ylabel='Weight value',
+            )
+            shape_text = ', '.join([
+                str(x)
+                for x in weights[i].data.shape
+            ])
+            weight_plots.append({
+                'title': title,
+                'svg': svg,
+                'shape': shape_text,
+            })
+
+    return weight_plots
 
 
 def add_to_path(p):

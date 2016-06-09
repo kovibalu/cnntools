@@ -1,8 +1,6 @@
 from datetime import datetime
 
 from cnntools.utils import add_caffe_to_path
-# Make sure that caffe is on the python path:
-from google import protobuf
 
 
 def freadlines(filepath, strip=True):
@@ -38,6 +36,7 @@ def parse_solver_file_content(file_content):
     '''
     add_caffe_to_path()
     from caffe.proto import caffe_pb2
+    from google import protobuf
     solver_params = caffe_pb2.SolverParameter()
     protobuf.text_format.Merge(file_content, solver_params)
 
@@ -45,6 +44,7 @@ def parse_solver_file_content(file_content):
 
 
 def gen_protobuf_file_content(protobuf_params):
+    from google import protobuf
     return protobuf.text_format.MessageToString(protobuf_params)
 
 
@@ -71,6 +71,7 @@ def parse_model_definition_file_content(file_content):
     '''
     add_caffe_to_path()
     from caffe.proto import caffe_pb2
+    from google import protobuf
     model_params = caffe_pb2.NetParameter()
     protobuf.text_format.Merge(file_content, model_params)
 

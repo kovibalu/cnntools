@@ -204,3 +204,17 @@ def transfer_weights(temp_dir, deployfile_source_path, weights_source_path,
     net_target.save(f_temp.name)
     # Move it to the final destination in an atomic operation
     os.rename(f_temp.name, weights_target_path)
+
+
+def load_net_from_snapshot(snapshot_id):
+    deployfile_relpath, weights_relpath = download_snapshot(
+        snapshot_id=snapshot_id,
+        transfer=False,
+    )
+
+    add_caffe_to_path()
+    import caffe
+    deployfile_path = os.path.join(settings.CAFFE_ROOT, deployfile_relpath)
+    weights_path = os.path.join(settings.CAFFE_ROOT, weights_relpath)
+
+    return caffe.Net(deployfile_path, weights_path, caffe.TEST)

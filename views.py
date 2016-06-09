@@ -2,7 +2,8 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404, render
 
 from cnntools import utils
-from cnntools.models import CaffeCNN, CaffeCNNTrainingRun
+from cnntools.snapshot_utils import load_net_from_snapshot
+from cnntools.models import CaffeCNN, CaffeCNNTrainingRun, CaffeCNNSnapshot
 
 
 @staff_member_required
@@ -129,3 +130,41 @@ def caffe_cnn_trainingrun_dashboard(
     }
 
     return render(request, template, context)
+
+
+@staff_member_required
+def caffe_cnn_snapshot_detail(
+        request,
+        pk,
+        template='cnntools/caffe_cnn_snapshot_detail.html'):
+
+    snapshot = get_object_or_404(CaffeCNNSnapshot, pk=pk)
+    net = load_net_from_snapshot(snapshot.id)
+    weight_plots = utils.get_svgs_from_net(net)
+
+    # sections on the page
+    nav_section_keys = [
+        ("description", 'Description'),
+        ("figures", 'Figures'),
+    ]
+    nav_sections = [
+        {
+            'key': t[0],
+            'name': t[1],
+            'template': 'cnntools/caffecnn_snapshot/%s.html' % t[0],
+        }
+        for t in nav_section_keys if t
+    ]
+    context = {
+        'nav': 'cnntools',
+        'subnav': 'models',
+        'nav_sections': nav_sections,
+        'snapshot': snapshot,
+        'caffe_cnn_trrun': snapshot.training_run,
+        'weight_plots': weight_plots,
+    }
+    print len(weight_plots)
+
+    return render(request, template, context)
+
+

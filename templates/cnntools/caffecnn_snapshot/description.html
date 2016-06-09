@@ -1,0 +1,7 @@
+{% load humanize %}
+
+<p><b>Net Name: </b><a href="{% url 'cnntools-caffe-cnn-detail' caffe_cnn_trrun.net.id %}">{{ caffe_cnn_trrun.net.netid }}</a></p>
+<p><b>Net Description:</b> {{ caffe_cnn_trrun.net.description }}</p>
+<p><b>Added:</b> {{ snapshot.added|naturaltime }}</p>
+<p><b>Iteration Number:</b> {{ snapshot.iteration }}</p>
+<p><b>Download snapshot file: </b><a href="{{ snapshot.model_snapshot.url }}">{{ snapshot.model_snapshot.file.size|filesizeformat }}</a></p>

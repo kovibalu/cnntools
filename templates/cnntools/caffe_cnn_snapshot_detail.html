@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load compress %}
+{% load humanize %}
+
+{% block header %}
+<div class="jumbotron subhead" id="overview">
+	<div class="container">
+		<h1>Snapshot Details</h1>
+	</div>
+</div>
+{% endblock %}
+
+{% block content %}
+<a href="{% url 'cnntools-caffe-cnn-trainingrun-detail' caffe_cnn_trrun.id %}" role="button" class="btn" target="_blank">Back</a>
+
+{# Pills navbar #}
+<div id="subnav" class="scrollspy-target" data-spinner="false">
+<ul class="nav nav-pills">
+	<li class="disabled"><a>Sections:</a></li>
+	{% for s in nav_sections %}
+	<li>
+		<a href="#section-{{ s.key }}">{{ s.name }}</a>
+	</li>
+	{% endfor %}
+</ul>
+</div>
+
+{% for s in nav_sections %}
+<section id="section-{{ s.key }}">
+	<h2 style="margin-top:30px">{{ s.name }}</h2>
+	{% include s.template with nav_section=s.key %}
+</section>
+{% endfor %}
+
+{% endblock %}
