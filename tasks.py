@@ -4,27 +4,16 @@ import numpy as np
 
 from celery import shared_task
 from cnntools import packer
-from cnntools.common_utils import progress_bar
+from cnntools.common_utils import progress_bar, import_function
 from cnntools.fet_extractor import load_fet_extractor
 from cnntools.models import CaffeCNN
 from cnntools.redis_aggregator import batch_ready
 from cnntools.snapshot_utils import download_snapshot
 from cnntools.timer import Timer
-from cnntools.trafos import (gram_fets, mean_std_fets, dummy_image_trafo_func,
-                             spatial_avg_fets)
+from cnntools.trafos import gram_fets, mean_std_fets, spatial_avg_fets
 from cnntools.trainer import start_training
 from cnntools.utils import create_default_trrun, get_worker_gpu_device_id
 from django.conf import settings
-
-
-def get_image_trafo_types():
-    # Add image transformations you may want to run before passing the image to
-    # the CNN for feature computation/prediction
-    # key: name of the transformation, value: a function which will be called
-    # with the image as input
-    return {
-        'dummy': dummy_image_trafo_func,
-    }
 
 
 def get_fet_trafo_types():
@@ -110,30 +99,28 @@ def compute_cnn_features_gpu_task(
         kwa['snapshot_id'], kwa['transfer_weights']
     )
     caffe, fet_extractor = load_fet_extractor(
-        deployfile_relpath, weights_relpath,
+        deployfile_relpath, weights_relpath, kwa['do_preprocessing'],
         kwa['image_dims'], kwa['mean'], device_id
     )
     # This doesn't preserve order!
     items = item_type.objects.in_bulk(id_list).values()
 
-    image_trafo_types = get_image_trafo_types()
     fet_trafo_types = get_fet_trafo_types()
 
     fets = []
     print 'Computing features for {} items...'.format(len(items))
     for item in progress_bar(items):
-        if kwa['image_trafo_type_id']:
-            with Timer('Image transformation'):
-                img = image_trafo_types[kwa['image_trafo_type_id']](
-                    item, **kwa['image_trafo_kwargs']
-                )
+        if kwa['input_trafo_func_name']:
+            with Timer('Input transformation'):
+                input_trafo = import_function(kwa['input_trafo_func_name'])
+                inp = input_trafo(item, **kwa['input_trafo_kwargs'])
         else:
-            img = caffe.io.load_image(item.photo.image_300)
+            inp = caffe.io.load_image(item.photo.image_300)
 
         if 'grayscale' in kwa and kwa['grayscale']:
-            img_gray = np.mean(img, axis=2)
-            img = np.zeros_like(img)
-            img[:, :, :] = img_gray[:, :, np.newaxis]
+            inp_gray = np.mean(inp, axis=2)
+            inp = np.zeros_like(inp)
+            inp[:, :, :] = inp_gray[:, :, np.newaxis]
 
         with Timer('Feature extraction'):
             # feature_name_list can contain 'img', which means that we want to
@@ -145,14 +132,14 @@ def compute_cnn_features_gpu_task(
                 fnl.remove('img')
 
             fetdic = fet_extractor.extract_features(
-                img, blob_names=fnl, auto_reshape=kwa['auto_reshape']
+                inp, blob_names=fnl, auto_reshape=kwa['auto_reshape']
             )
 
         if kwa['fet_trafo_type_id']:
             with Timer('Feature transformation'):
                 # This might add 'img' the the feature list
                 fetdic = fet_trafo_types[kwa['fet_trafo_type_id']](
-                    item, img, fetdic, feature_name_list,
+                    item, inp, fetdic, feature_name_list,
                     **kwa['fet_trafo_kwargs']
                 )
 

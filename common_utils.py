@@ -157,3 +157,17 @@ class ModelBase(EmptyModelBase):
 def get_opensurfaces_storage():
     return import_attribute(settings.OPENSURFACES_FILE_STORAGE)()
 
+
+def import_function(module_function_str):
+    tokens = module_function_str.split('.')
+    module_name = '.'.join(tokens[:-1])
+    func_name = tokens[-1]
+    imported_module = __import__(
+        module_name,
+        globals=globals(),
+        locals=locals(),
+        fromlist=[func_name],
+        level=-1,
+    )
+    return getattr(imported_module, func_name)
+

@@ -14,5 +14,5 @@ class Timer:
         self.end = timeit.default_timer()
         self.interval = self.end - self.start
 
-        if not settings.SKIP_TIMER:
+        if hasattr(settings, 'SKIP_TIMER') and not settings.SKIP_TIMER:
             print '{} took {:.3f} seconds'.format(self.message, self.interval)

@@ -286,14 +286,15 @@ def compute_cnn_features(
     feature_name_list,
     num_dims_list,
     snapshot_id,
-    image_dims,
-    mean,
+    do_preprocessing=True,
+    image_dims=None,
+    mean=None,
     grayscale=False,
     auto_reshape=False,
     transfer_weights=False,
     slug_extra='',
-    image_trafo_type_id=None,
-    image_trafo_kwargs=None,
+    input_trafo_func_name=None,
+    input_trafo_kwargs=None,
     fet_trafo_type_id=None,
     fet_trafo_kwargs=None,
 ):
@@ -328,6 +329,8 @@ def compute_cnn_features(
 
     :param snapshot_id: The ID of the snapshot to use.
 
+    :param do_preprocessing: True, if we should do preprocessing (resizing/cropping the image for example) on the input.
+
     :param image_dims: Tuple with two elements which defines the image
     dimensions (width, height). All input images will be resized to this size.
     This should be the same as the one was used for training.
@@ -348,11 +351,12 @@ def compute_cnn_features(
 
     :param slug_extra: Additional string to add to the slug.
 
-    :param image_trafo_type_id: Image transformation primitive. Currently the
-    user can select from:
-        ['MINC-padding']
+    :param input_trafo_func_name: Input (usually an image) transformation
+    primitive. This should include the module and the function name like
+    'parent_module.child_module.example_function_name'. This module should be
+    on the python path.
 
-    :param image_trafo_kwargs: Keyword arguments for the chosen image
+    :param input_trafo_kwargs: Keyword arguments for the chosen image
     transformation primitive.
 
     :param fet_trafo_type_id: Feature transformation primitive. Currently the
@@ -366,13 +370,14 @@ def compute_cnn_features(
 
     fetcomp_kwargs = {
         'snapshot_id': snapshot_id,
+        'do_preprocessing': do_preprocessing,
         'image_dims': image_dims,
         'mean': mean,
         'grayscale': grayscale,
         'auto_reshape': auto_reshape,
         'transfer_weights': transfer_weights,
-        'image_trafo_type_id': image_trafo_type_id,
-        'image_trafo_kwargs': image_trafo_kwargs,
+        'input_trafo_func_name': input_trafo_func_name,
+        'input_trafo_kwargs': input_trafo_kwargs,
         'fet_trafo_type_id': fet_trafo_type_id,
         'fet_trafo_kwargs': fet_trafo_kwargs,
     }

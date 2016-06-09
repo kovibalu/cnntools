@@ -9,6 +9,7 @@ from cnntools.utils import add_caffe_to_path
 def load_fet_extractor(
     deployfile_relpath,
     weights_relpath,
+    do_preprocessing=True,
     image_dims=(256, 256),
     mean=(104, 117, 123),
     device_id=0,
@@ -19,7 +20,8 @@ def load_fet_extractor(
 
     FeatureExtractor = def_FeatureExtractor(caffe)
 
-    mean = np.array(mean)
+    if mean is not None:
+        mean = np.array(mean)
 
     model_file = os.path.join(settings.CAFFE_ROOT, deployfile_relpath)
     pretrained_file = os.path.join(settings.CAFFE_ROOT, weights_relpath)
@@ -36,6 +38,7 @@ def load_fet_extractor(
     net = FeatureExtractor(
         model_file=model_file,
         pretrained_file=pretrained_file,
+        do_preprocessing=do_preprocessing,
         image_dims=image_dims,
         mean=mean,
         input_scale=input_scale,
@@ -58,9 +61,13 @@ def def_FeatureExtractor(caffe):
             preprocessing options.
         """
 
-        def __init__(self, model_file, pretrained_file, image_dims, mean=None,
+        def __init__(self, model_file, pretrained_file, do_preprocessing, image_dims, mean=None,
                      input_scale=None, raw_scale=None, channel_swap=None):
             caffe.Net.__init__(self, model_file, pretrained_file, caffe.TEST)
+            self.do_preprocessing = do_preprocessing
+
+            if not self.do_preprocessing:
+                return
 
             # configure pre-processing
             in_ = self.inputs[0]
@@ -121,7 +128,6 @@ def def_FeatureExtractor(caffe):
                 ])
                 input_ = input_[:, crop[0]:crop[2], crop[1]:crop[3], :]
 
-            # Run net
             caffe_in = np.zeros(
                 np.array(input_.shape)[[0, 3, 1, 2]],
                 dtype=np.float32
@@ -150,7 +156,17 @@ def def_FeatureExtractor(caffe):
             else:
                 inputs = [caffe.io.load_image(filename)]
 
-            caffe_in = self.preprocess_inputs(inputs, auto_reshape=auto_reshape)
+            if self.do_preprocessing:
+                caffe_in = self.preprocess_inputs(inputs, auto_reshape=auto_reshape)
+            else:
+                # All inputs should have the same input dimensions!
+                caffe_in = np.zeros(
+                    (len(inputs), ) + inputs[0].shape,
+                    dtype=np.float32
+                )
+                for ix, in_ in enumerate(inputs):
+                    caffe_in[ix] = in_
+
             return self.forward_all(**{self.inputs[0]: caffe_in})
 
         def extract_features(self, filename, blob_names, auto_reshape=True):
