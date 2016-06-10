@@ -73,6 +73,15 @@ def get_descstore_filename(netid, feature_name):
     return '{}.hdf5'.format(dirname)
 
 
+def get_descstore_filepaths(desc_rootpath, feature_name_list, caffe_cnn,
+                            snapshot_id, slug_extra=''):
+    slug, snapshot_id = get_slug(caffe_cnn, snapshot_id, slug_extra)
+    return [
+        os.path.join(desc_rootpath, get_descstore_filename(slug, feature_name))
+        for feature_name in feature_name_list
+    ]
+
+
 def dispatch_feature_comp(
     desc_rootpath,
     item_type,
