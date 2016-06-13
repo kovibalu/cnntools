@@ -262,6 +262,9 @@ def get_svgs_from_net(net):
     weight_plots = []
     for layer_name, weights in net.params.iteritems():
         for i, label in enumerate(['weights', 'biases']):
+            if len(weights) <= i:
+                continue
+
             title = '%s - %s' % (layer_name, label)
             svg = plot_svg_net_weights(
                 weights_arr=np.ravel(weights[i].data),
