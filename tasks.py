@@ -40,7 +40,8 @@ def start_training_task(netid, options):
             caffe_cnn,
             model_file_content,
             solver_file_content,
-            deploy_file_content
+            deploy_file_content,
+            description=options['description'],
         )
         caffe_cnn_trrun_id = caffe_cnn_trrun.id
 

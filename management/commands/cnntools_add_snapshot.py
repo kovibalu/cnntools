@@ -43,6 +43,7 @@ class Command(BaseCommand):
                 model_file_content,
                 solver_file_content,
                 deploy_file_content,
+                description='Dummy training run to add snapshot.',
                 100000,
             )
             trainingrun_id = trrun.id

@@ -105,6 +105,9 @@ class CaffeCNNTrainingRun(ModelBase):
     #: Last time this run was updated
     modified = models.DateTimeField(auto_now=True)
 
+    # human-friendly description
+    description = models.TextField(null=True, blank=True)
+
     def is_finished(self):
         # It's finished if there was no update in 30 minutes
         return self.modified < now() - timedelta(minutes=30)

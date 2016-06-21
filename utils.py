@@ -319,7 +319,7 @@ def get_worker_gpu_device_id():
 
 
 def create_default_trrun(caffe_cnn, model_file_content, solver_file_content,
-                         deploy_file_content, final_iteration=0):
+                         deploy_file_content, description='', final_iteration=0):
     from cnntools.models import CaffeCNNTrainingRun
     return CaffeCNNTrainingRun.objects.create(
         net=caffe_cnn,
@@ -328,6 +328,7 @@ def create_default_trrun(caffe_cnn, model_file_content, solver_file_content,
         model_file_snapshot=random_file_from_content(model_file_content),
         solver_file_snapshot=random_file_from_content(solver_file_content),
         deploy_file_snapshot=random_file_from_content(deploy_file_content),
+        description=description,
         outputs_json=json.dumps([{}, {}]),
         output_names_json=json.dumps([{}, {}]),
     )

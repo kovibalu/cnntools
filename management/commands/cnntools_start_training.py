@@ -7,7 +7,7 @@ from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
-    args = '<netid> <local?> <base_lr?> <weights?> <cpu?> <debug_info?>'
+    args = '<netid> <local?> <base_lr?> <weights?> <cpu?> <debug_info?> <desc?>'
     help = 'Starts training a CaffeCNN model'
 
     option_list = BaseCommand.option_list + (
@@ -50,6 +50,14 @@ class Command(BaseCommand):
             type='int',
             dest='caffe_cnn_trrun_id',
             help='This should be specified if we want to continue training a model!',
+        ),
+        make_option(
+            '--desc',
+            action='store',
+            type='string',
+            dest='description',
+            default='No description.',
+            help='Description of the training run (what is different?)',
         ),
     )
 
