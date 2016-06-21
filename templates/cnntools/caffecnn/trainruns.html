@@ -6,6 +6,7 @@
 			<th></th>
 			<th>Date Added</th>
 			<th>Iteration Number</th>
+			<th>Description</th>
 		</tr>
 	</thead>
 
@@ -16,6 +17,7 @@
 		</td>
 		<td>{{ entry.added|naturaltime }}</td>
 		<td>{{ entry.final_iteration }}</td>
+		<td>{{ entry.description }}</td>
 	</tr>
 	{% endfor %}
 </table>
