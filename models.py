@@ -9,7 +9,7 @@ from django.utils.timezone import now
 
 from cnntools.common_utils import (FileUploadPath, FileUploadPathKeepName,
                                    ModelBase, get_opensurfaces_storage)
-from cnntools.utils import get_file_content
+from cnntools.utils import get_file_content, get_svgs_from_output
 
 STORAGE = get_opensurfaces_storage()
 
@@ -130,6 +130,12 @@ class CaffeCNNTrainingRun(ModelBase):
         output_names = json.loads(self.output_names_json)
 
         return outputs, output_names
+
+    def get_svgs(self, simplified=False):
+        outputs, output_names = self.get_outputs()
+        return get_svgs_from_output(
+            outputs, output_names, simplified=simplified
+        )
 
     def get_model_file_content(self):
         return get_file_content(self.model_file_snapshot)

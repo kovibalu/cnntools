@@ -156,9 +156,12 @@ def aggregate_feature_comp(
     num_dims_list,
     aggr_batchsize,
     slug,
+    handle_interrupt_signal=True,
 ):
     print 'Aggregating feature computation for {} models'.format(item_type)
-    patch_interrupt_signal()
+    if handle_interrupt_signal:
+        patch_interrupt_signal()
+
     dirname_list = [
         get_descstore_dirname(slug, feature_name)
         for feature_name in feature_name_list
@@ -168,7 +171,9 @@ def aggregate_feature_comp(
     aggregator.load(desc_rootpath, readonly=False)
     task_id = get_task_id(slug, feature_name_list)
     ret = aggregator.run(item_ids, task_id, aggr_batchsize=aggr_batchsize)
-    detach_patch_interrupt_signal()
+
+    if handle_interrupt_signal:
+        detach_patch_interrupt_signal()
 
     return ret
 
@@ -207,6 +212,7 @@ def compute_features(
     fetcomp_func,
     fetcomp_kwargs,
     slug,
+    handle_interrupt_signal=True,
 ):
     """
     Extracts the specified feature for the specified items using a trained CNN.
@@ -242,6 +248,8 @@ def compute_features(
 
     :param slug: The unique humanly readable name associated with the feature
     computation task.
+
+    :param handle_interrupt_signal: If True, we patch the interrupt signal so the descriptor store is saved before exiting, when the user hits Ctrl + C.
     """
     item_ids_set = set(item_ids)
     if isinstance(feature_name_list, (str, unicode)):
@@ -272,6 +280,7 @@ def compute_features(
         num_dims_list,
         aggr_batchsize,
         slug,
+        handle_interrupt_signal=handle_interrupt_signal,
     )
     if was_interrupted:
         return None
@@ -306,6 +315,7 @@ def compute_cnn_features(
     input_trafo_kwargs=None,
     fet_trafo_type_id=None,
     fet_trafo_kwargs=None,
+    handle_interrupt_signal=True,
 ):
     """
     Extracts the specified feature for the specified items using a trained CNN.
@@ -374,6 +384,8 @@ def compute_cnn_features(
 
     :param fet_trafo_kwargs: Keyword arguments for the chosen feature
     transformation primitive.
+
+    :param handle_interrupt_signal: If True, we patch the interrupt signal so the descriptor store is saved before exiting, when the user hits Ctrl + C.
     """
     slug, snapshot_id = get_slug(caffe_cnn, snapshot_id, slug_extra)
 
@@ -402,4 +414,5 @@ def compute_cnn_features(
         compute_cnn_features_gpu_task,
         fetcomp_kwargs,
         slug,
+        handle_interrupt_signal=handle_interrupt_signal,
     )
