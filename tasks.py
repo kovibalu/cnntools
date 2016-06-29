@@ -110,7 +110,11 @@ def compute_cnn_features_gpu_task(
 
     fets = []
     print 'Computing features for {} items...'.format(len(items))
-    for item in progress_bar(items):
+    show_progress = False
+    if show_progress:
+        items = progress_bar(items)
+
+    for item in items:
         if kwa['input_trafo_func_name']:
             with Timer('Input transformation'):
                 input_trafo = import_function(kwa['input_trafo_func_name'])
