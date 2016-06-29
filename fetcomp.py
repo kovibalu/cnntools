@@ -184,7 +184,6 @@ def retrieve_features(
     feature_name_list,
     slug,
 ):
-    # TODO: Use DescriptorAggregator instead, so we don't have to assemble the filename...
     features = {}
     for feature_name in feature_name_list:
         filename = get_descstore_filename(slug, feature_name)
@@ -256,7 +255,7 @@ def compute_features(
         if isinstance(num_dims_list, list):
             raise ValueError(
                 'If "feature_name_list" is not specified as a list, '
-                '"num_dims_list" has to a single number!'
+                '"num_dims_list" has to be a single number!'
             )
         feature_name_list = [feature_name_list]
         num_dims_list = [num_dims_list]
