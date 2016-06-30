@@ -251,6 +251,7 @@ def compute_features(
     :param handle_interrupt_signal: If True, we patch the interrupt signal so the descriptor store is saved before exiting, when the user hits Ctrl + C.
     """
     item_ids_set = set(item_ids)
+    single_feature = False
     if isinstance(feature_name_list, (str, unicode)):
         if isinstance(num_dims_list, list):
             raise ValueError(
@@ -259,6 +260,7 @@ def compute_features(
             )
         feature_name_list = [feature_name_list]
         num_dims_list = [num_dims_list]
+        single_feature = True
 
     dispatch_feature_comp(
         desc_rootpath,
@@ -285,12 +287,16 @@ def compute_features(
         return None
 
     # The order of the item ids is important!
-    return retrieve_features(
+    fets = retrieve_features(
         desc_rootpath,
         item_ids,
         feature_name_list,
         slug,
     )
+    if single_feature:
+        fets = fets[feature_name_list[0]]
+
+    return fets
 
 
 def compute_cnn_features(
