@@ -76,6 +76,8 @@ def batch_ready(task_id, batch_id, value):
 
 
 class RedisAggregator(object):
+    def __init__(self, verbose=True):
+        self.verbose = verbose
 
     def scan(self, task_id, completed_ids, num_ids, aggr_batchsize=1024, flush_interval=60):
         self.task_id = task_id
@@ -83,11 +85,13 @@ class RedisAggregator(object):
         self.aggr_batchsize = aggr_batchsize
         self.completed_ids = set(completed_ids)
 
-        print "RedisAggregator.scan(task_id: %s, completed_ids: %s, num_ids: %s)" % (
-            self.task_id, len(self.completed_ids), self.num_ids)
+        if self.verbose:
+            print "RedisAggregator.scan(task_id: %s, completed_ids: %s, num_ids: %s)" % (
+                self.task_id, len(self.completed_ids), self.num_ids)
 
         self.client = redis.StrictRedis(**settings.REDIS_AGGRO_LOCAL_CONFIG)
-        print "initial dbsize: %s" % self.client.dbsize()
+        if self.verbose:
+            print "initial dbsize: %s" % self.client.dbsize()
 
         self.visited_keys = set()
         self.keys_to_delete = set()
@@ -96,11 +100,13 @@ class RedisAggregator(object):
         self.last_flush = time.time()
 
         num_remaining = self.num_ids - len(self.completed_ids)
-        self.pbar = ProgressBar(
-            widgets=progress_bar_widgets(),
-            maxval=num_remaining,
-        )
-        self.pbar.start()
+        if self.verbose:
+            self.pbar = ProgressBar(
+                widgets=progress_bar_widgets(),
+                maxval=num_remaining,
+            )
+            self.pbar.start()
+
         self.pbar_count = 0
         while self.pbar_count < num_remaining and not INTERRUPTED:
             try:
@@ -117,7 +123,8 @@ class RedisAggregator(object):
         if not INTERRUPTED:
             self.client.delete(self.task_id)
 
-        self.pbar.finish()
+        if self.verbose:
+            self.pbar.finish()
 
     def aggregate_item(self, value):
         """ Return the added ids if successful, empty list if unsuccessful """
@@ -164,7 +171,8 @@ class RedisAggregator(object):
                     if len(added_ids) > 0:
                         self.pbar_count += len(added_ids)
                         self.completed_ids.update(added_ids)
-                        self.pbar.update(self.pbar_count)
+                        if self.verbose:
+                            self.pbar.update(self.pbar_count)
                 except Exception:
                     traceback.print_exc()
 

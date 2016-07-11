@@ -55,8 +55,10 @@ from cnntools.redis_aggregator import RedisAggregator
 
 
 class DescriptorAggregator(RedisAggregator):
-    def __init__(self, feature_name_list, filename_list, num_dims_list, postprocess=False):
-        RedisAggregator.__init__(self)
+    def __init__(self, feature_name_list, filename_list, num_dims_list,
+                 postprocess=False, verbose=True):
+        self.verbose = verbose
+        RedisAggregator.__init__(self, verbose=self.verbose)
         self.feature_name_list = feature_name_list
         self.filename_list = filename_list
         self.num_dims_list = num_dims_list
@@ -76,6 +78,7 @@ class DescriptorAggregator(RedisAggregator):
             store = DescriptorStoreHdf5(
                 path=hdf5_filepath,
                 readonly=readonly,
+                verbose=self.verbose,
             )
             if not store.created:
                 store.create(
@@ -90,7 +93,9 @@ class DescriptorAggregator(RedisAggregator):
     def run(self, all_ids, task_id, aggr_batchsize):
         '''Returns False if it was interrupted'''
         self.store_buffer_list = [
-            DescriptorStoreHdf5Buffer(store, buffer_size=65536)
+            DescriptorStoreHdf5Buffer(
+                store, buffer_size=65536, verbose=self.verbose
+            )
             for store in self.store_list
         ]
 
@@ -106,9 +111,11 @@ class DescriptorAggregator(RedisAggregator):
         all_ids.update(completed_ids)
         num_ids = len(all_ids)
 
-        print "starting scan"
+        if self.verbose:
+            print "starting scan"
         self.scan(task_id, completed_ids, num_ids, aggr_batchsize)
-        print "scan exited"
+        if self.verbose:
+            print "scan exited"
 
         self.flush()
 
@@ -117,7 +124,8 @@ class DescriptorAggregator(RedisAggregator):
             return False
 
         if self.postprocess:
-            print "hdf5_to_memmap..."
+            if self.verbose:
+                print "hdf5_to_memmap..."
             for hdf5_filepath, hdf5_dirpath in zip(self.hdf5_filepath_list, self.hdf5_dirpath_list):
                 hdf5_to_memmap(
                     src_path=hdf5_filepath,
@@ -131,7 +139,8 @@ class DescriptorAggregator(RedisAggregator):
             del store
 
     def flush(self):
-        print "Flushing buffers"
+        if self.verbose:
+            print "Flushing buffers"
         for store_buffer, store in zip(self.store_buffer_list, self.store_list):
             store_buffer.flush()
             store.flush()

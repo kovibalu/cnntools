@@ -92,8 +92,10 @@ def dispatch_feature_comp(
     fetcomp_func,
     fetcomp_kwargs,
     slug,
+    verbose=False,
 ):
-    print 'Dispatching feature computation for incomplete {} models'.format(item_type)
+    if verbose:
+        print 'Dispatching feature computation for incomplete {} models'.format(item_type)
 
     # TODO: Use DescriptorAggregator instead, so we don't have to assemble the filename...
     completed_ids = set()
@@ -103,8 +105,10 @@ def dispatch_feature_comp(
             src_store = DescriptorStoreHdf5(
                 path=os.path.join(desc_rootpath, filename),
                 readonly=True,
+                verbose=verbose,
             )
-            print 'Loaded completed descriptors for {}.'.format(filename)
+            if verbose:
+                print 'Loaded completed descriptors for {}.'.format(filename)
             # Get already completed ids
             current_ids = set(src_store.ids[...])
             if completed_ids:
@@ -112,16 +116,19 @@ def dispatch_feature_comp(
             else:
                 completed_ids = current_ids
 
-    print 'Getting ids for incomplete items...'
+    if verbose:
+        print 'Getting ids for incomplete items...'
     todo_ids = item_ids.difference(completed_ids)
-    print '{} ids completed already'.format(len(completed_ids))
-    print '{} ids to do...'.format(len(todo_ids))
+    if verbose:
+        print '{} ids completed already'.format(len(completed_ids))
+        print '{} ids to do...'.format(len(todo_ids))
 
     task_id = get_task_id(slug, feature_name_list)
 
-    pbar = ProgressBar(widgets=progress_bar_widgets(), maxval=len(todo_ids))
-    pbar_counter = 0
-    pbar.start()
+    if verbose:
+        pbar = ProgressBar(widgets=progress_bar_widgets(), maxval=len(todo_ids))
+        pbar_counter = 0
+        pbar.start()
     batchid_counter = 0
     batch = []
 
@@ -142,10 +149,12 @@ def dispatch_feature_comp(
         )
 
         batchid_counter += 1
-        pbar_counter += len(batch)
-        pbar.update(pbar_counter)
+        if verbose:
+            pbar_counter += len(batch)
+            pbar.update(pbar_counter)
 
-    pbar.finish()
+    if verbose:
+        pbar.finish()
 
 
 def aggregate_feature_comp(
@@ -157,8 +166,10 @@ def aggregate_feature_comp(
     aggr_batchsize,
     slug,
     handle_interrupt_signal=True,
+    verbose=False,
 ):
-    print 'Aggregating feature computation for {} models'.format(item_type)
+    if verbose:
+        print 'Aggregating feature computation for {} models'.format(item_type)
     if handle_interrupt_signal:
         patch_interrupt_signal()
 
@@ -167,7 +178,9 @@ def aggregate_feature_comp(
         for feature_name in feature_name_list
     ]
 
-    aggregator = DescriptorAggregator(feature_name_list, dirname_list, num_dims_list)
+    aggregator = DescriptorAggregator(
+        feature_name_list, dirname_list, num_dims_list, verbose=verbose
+    )
     aggregator.load(desc_rootpath, readonly=False)
     task_id = get_task_id(slug, feature_name_list)
     ret = aggregator.run(item_ids, task_id, aggr_batchsize=aggr_batchsize)
@@ -183,6 +196,7 @@ def retrieve_features(
     item_ids,
     feature_name_list,
     slug,
+    verbose=False,
 ):
     features = {}
     for feature_name in feature_name_list:
@@ -190,11 +204,14 @@ def retrieve_features(
         src_store = DescriptorStoreHdf5(
             path=os.path.join(desc_rootpath, filename),
             readonly=True,
+            verbose=verbose,
         )
         if item_ids is None:
             item_ids = src_store.ids[...]
 
-        features[feature_name] = src_store.block_get(item_ids, show_progress=True)
+        features[feature_name] = src_store.block_get(
+            item_ids, show_progress=verbose
+        )
         del src_store
 
     return features
@@ -212,6 +229,7 @@ def compute_features(
     fetcomp_kwargs,
     slug,
     handle_interrupt_signal=True,
+    verbose=False,
 ):
     """
     Extracts the specified feature for the specified items using a trained CNN.
@@ -249,6 +267,8 @@ def compute_features(
     computation task.
 
     :param handle_interrupt_signal: If True, we patch the interrupt signal so the descriptor store is saved before exiting, when the user hits Ctrl + C.
+
+    :param verbose: If True, print progress information to the console.
     """
     item_ids_set = set(item_ids)
     single_feature = False
@@ -272,6 +292,7 @@ def compute_features(
         fetcomp_func,
         fetcomp_kwargs,
         slug,
+        verbose=verbose,
     )
     was_interrupted = not aggregate_feature_comp(
         desc_rootpath,
@@ -282,6 +303,7 @@ def compute_features(
         aggr_batchsize,
         slug,
         handle_interrupt_signal=handle_interrupt_signal,
+        verbose=verbose,
     )
     if was_interrupted:
         return None
@@ -292,6 +314,7 @@ def compute_features(
         item_ids,
         feature_name_list,
         slug,
+        verbose=verbose,
     )
     if single_feature:
         fets = fets[feature_name_list[0]]
@@ -321,6 +344,7 @@ def compute_cnn_features(
     fet_trafo_type_id=None,
     fet_trafo_kwargs=None,
     handle_interrupt_signal=True,
+    verbose=False,
 ):
     """
     Extracts the specified feature for the specified items using a trained CNN.
@@ -391,6 +415,8 @@ def compute_cnn_features(
     transformation primitive.
 
     :param handle_interrupt_signal: If True, we patch the interrupt signal so the descriptor store is saved before exiting, when the user hits Ctrl + C.
+
+    :param verbose: If True, print progress information to the console.
     """
     slug, snapshot_id = get_slug(caffe_cnn, snapshot_id, slug_extra)
 
@@ -420,4 +446,5 @@ def compute_cnn_features(
         fetcomp_kwargs,
         slug,
         handle_interrupt_signal=handle_interrupt_signal,
+        verbose=verbose,
     )

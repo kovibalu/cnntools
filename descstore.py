@@ -57,13 +57,15 @@ import h5py
 from cnntools.common_utils import progress_bar
 
 
-def hdf5_to_memmap(src_path, dst_path, dst_data_dtype=None):
+def hdf5_to_memmap(src_path, dst_path, dst_data_dtype=None, verbose=True):
     assert os.path.exists(src_path)
     assert not os.path.exists(dst_path) or os.path.isdir(dst_path)
 
-    print "load src..."
+    if verbose:
+        print "load src..."
     src = DescriptorStoreHdf5(path=src_path, readonly=True)
-    print "create dst..."
+    if verbose:
+        print "create dst..."
     dst = DescriptorStoreMemmap(path=dst_path, readonly=False)
     if not dst_data_dtype:
         dst_data_dtype = src.data.dtype
@@ -71,15 +73,19 @@ def hdf5_to_memmap(src_path, dst_path, dst_data_dtype=None):
                num_dims=src.num_dims,
                id_dtype=src.ids.dtype,
                data_dtype=dst_data_dtype)
-    print "copy IDs..."
+    if verbose:
+        print "copy IDs..."
     dst._ids[:] = sorted(src.ids[:])
     dst._next_idx = src.num_ids
-    print "copy data..."
-    src.block_get(dst.ids, ret=dst._data, show_progress=True)
-    print "reconstruct"
+    if verbose:
+        print "copy data..."
+    src.block_get(dst.ids, ret=dst._data, show_progress=verbose)
+    if verbose:
+        print "reconstruct"
     dst.reconstruct()
 
-    print "check random IDs..."
+    if verbose:
+        print "check random IDs..."
     del src
     del dst
     src = DescriptorStoreHdf5(path=src_path, readonly=True)
@@ -91,12 +97,14 @@ def hdf5_to_memmap(src_path, dst_path, dst_data_dtype=None):
 
 class DescriptorStoreHdf5(object):
 
-    def __init__(self, path, readonly=True):
+    def __init__(self, path, readonly=True, verbose=True):
         self._path = path
         self._readonly = readonly
+        self.verbose = verbose
         exists = os.path.exists(self._path)
-        print "DescriptorStoreHdf5.__init__(path='%s', readonly=%s), exists: %s" % (
-            path, readonly, exists)
+        if self.verbose:
+            print "DescriptorStoreHdf5.__init__(path='%s', readonly=%s), exists: %s" % (
+                path, readonly, exists)
 
         self._created = False
         if readonly:
@@ -116,24 +124,29 @@ class DescriptorStoreHdf5(object):
             assert self._created, "Could not load '%s'" % path
 
     def _load(self):
-        print "DescriptorStoreHdf5._load... "
+        if self.verbose:
+            print "DescriptorStoreHdf5._load... "
         start_time = time.time()
         self._ids = self._file['ids']
         self._data = self._file['data']
         self._update_map()
         self._created = True
-        print "DescriptorStoreHdf5._load: ids: %s, data: %s (%.3f s)" % (
-            self._ids.shape, self._data.shape, time.time() - start_time)
+        if self.verbose:
+            print "DescriptorStoreHdf5._load: ids: %s, data: %s (%.3f s)" % (
+                self._ids.shape, self._data.shape, time.time() - start_time)
 
     def create(self, num_dims, id_dtype=np.int64, data_dtype=np.float32):
-        print "DescriptorStoreHdf5.create(num_dims=%s, id_type=%s, data_type=%s)..." % (
-            num_dims, id_dtype, data_dtype)
+        if self.verbose:
+            print "DescriptorStoreHdf5.create(num_dims=%s, id_type=%s, data_type=%s)..." % (
+                num_dims, id_dtype, data_dtype)
 
         if 'ids' in self._file:
-            print "DescriptorStoreHdf5.create: deleting existing ids"
+            if self.verbose:
+                print "DescriptorStoreHdf5.create: deleting existing ids"
             del self._file['ids']
         if 'data' in self._file:
-            print "DescriptorStoreHdf5.create: deleting existing data"
+            if self.verbose:
+                print "DescriptorStoreHdf5.create: deleting existing data"
             del self._file['data']
 
         opts = dict(
@@ -251,11 +264,13 @@ class DescriptorStoreHdf5(object):
 
     def flush(self):
         if not self._readonly:
-            print "DescriptorStoreHdf5.flush: %s..." % self._path
+            if self.verbose:
+                print "DescriptorStoreHdf5.flush: %s..." % self._path
             start_time = time.time()
             self._file.flush()
-            print "DescriptorStoreHdf5.flush: %s done (%.3f s)" % (
-                self._path, time.time() - start_time)
+            if self.verbose:
+                print "DescriptorStoreHdf5.flush: %s done (%.3f s)" % (
+                    self._path, time.time() - start_time)
 
     def __del__(self):
         if self._created:
@@ -273,11 +288,12 @@ class DescriptorStoreHdf5Buffer(object):
     For efficiency, it drops duplicate writes to existing ids -- the second
     write is ignored. """
 
-    def __init__(self, store, buffer_size=65536):
+    def __init__(self, store, buffer_size=65536, verbose=True):
         self._store = store
         self._buffer_size = buffer_size
         self._pending_ids = np.empty((buffer_size, ), dtype=store.ids.dtype)
         self._pending_data = np.empty((buffer_size, store.num_dims), dtype=store.data.dtype)
+        self.verbose = verbose
         #self._pending_ids.fill(0)
         #self._pending_data.fill(np.nan)
         self._size = 0
@@ -323,7 +339,7 @@ class DescriptorStoreHdf5Buffer(object):
         self._size = 0
 
         elapsed_time = time.time() - start_time
-        if elapsed_time > 10:
+        if elapsed_time > 10 and self.verbose:
             print "DescriptorStoreHdf5Buffer.flush: block-append %s items (%.3f s, logging because > 10s)" % (
                 num_appended, elapsed_time)
 
@@ -450,12 +466,14 @@ class DescriptorStoreMemmap(object):
             self.flush()
 
     def flush(self):
-        print 'flush: %s...' % self._meta_filename
+        if self.verbose:
+            print 'flush: %s...' % self._meta_filename
         self._data.flush()
         self._ids.flush()
         self._save_meta()
         self._dirty = False
-        print 'flush complete: %s' % self._meta_filename
+        if self.verbose:
+            print 'flush complete: %s' % self._meta_filename
 
     @property
     def created(self):
@@ -501,7 +519,8 @@ class DescriptorStoreMemmap(object):
         else:
             mode = 'w+' if initialize else 'r+'
 
-        print "DescriptorStoreMemmap._load_data: loading '%s', shape: (%s, %s), mode: %s" % (
+        if self.verbose:
+            print "DescriptorStoreMemmap._load_data: loading '%s', shape: (%s, %s), mode: %s" % (
             self._data_filename, self._max_ids, self._num_dims, mode)
         self._data = np.memmap(
             filename=self._data_filename,
@@ -510,7 +529,8 @@ class DescriptorStoreMemmap(object):
             shape=(self._max_ids, self._num_dims),
         )
 
-        print "DescriptorStoreMemmap._load_data: loading '%s', shape: (%s, ), mode: %s" % (
+        if self.verbose:
+            print "DescriptorStoreMemmap._load_data: loading '%s', shape: (%s, ), mode: %s" % (
             self._ids_filename, self._max_ids, mode)
         self._ids = np.memmap(
             filename=self._ids_filename,
@@ -525,7 +545,8 @@ class DescriptorStoreMemmap(object):
             #print "Filling data with nan..."
             #self._data.fill(float('nan'))
             #self._data.flush()
-            print "Filling ids with 0..."
+            if self.verbose:
+                print "Filling ids with 0..."
             self._ids.fill(0)
             self._ids.flush()
 
@@ -539,7 +560,8 @@ class DescriptorStoreMemmap(object):
                 self._next_idx = idx
                 break
 
-        print "DescriptorStoreMemmap._load_data: _next_idx: %s" % self._next_idx
+        if self.verbose:
+            print "DescriptorStoreMemmap._load_data: _next_idx: %s" % self._next_idx
         assert len(self._id_to_idx) == self._next_idx
 
 
