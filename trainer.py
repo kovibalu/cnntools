@@ -52,7 +52,7 @@ def _refresh_solverfile(caffe_cnn_trrun_id, solver_file_content):
 def extract_batchsize_testsetsize(model_file_content):
     from caffe.proto import caffe_pb2
 
-    # Note that we handle only MULTI_IMAGE_DATA layer and some other layers (see below), we require that include.phase be TEST
+    # Note that we handle only MULTI_IMAGE_DATA layer and some other layers (see below), we require include.phase be TEST
     model_params = caffefileproc.parse_model_definition_file_content(model_file_content)
     batch_size = None
     testset_size = None
@@ -237,6 +237,7 @@ def train_network(solver_params, solverfile_path, options,
         max_iter = solver_params.max_iter
         start_it = 0
 
+    final_snapshot_id = None
     for it in range(start_it, max_iter+1):
         start = time.clock()
         solver.step(1)  # SGD by Caffe
@@ -279,7 +280,10 @@ def train_network(solver_params, solverfile_path, options,
                     it
                 )
             )
-            upload_snapshot(caffe_cnn_trrun_id, snapshot_path, it)
+            final_snapshot = upload_snapshot(caffe_cnn_trrun_id, snapshot_path, it)
+            final_snapshot_id = final_snapshot.id
+
+    return final_snapshot_id
 
 
 def start_training(model_name, model_file_content, solver_file_content,
@@ -301,7 +305,7 @@ def start_training(model_name, model_file_content, solver_file_content,
     os.chdir(settings.CAFFE_ROOT)
     # TODO: Figure out to detect divergence and that the loss doesn't decrease,
     # so we can stop training
-    train_network(
+    return train_network(
         solver_params, solverfile_path, options, caffe_cnn_trrun_id,
     )
 

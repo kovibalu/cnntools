@@ -50,7 +50,7 @@ def start_training_task(netid, options):
     else:
         device_id = get_worker_gpu_device_id()
 
-    start_training(
+    return start_training(
         model_name=netid,
         model_file_content=model_file_content,
         solver_file_content=solver_file_content,

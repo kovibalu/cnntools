@@ -25,7 +25,7 @@ def upload_snapshot(caffe_cnn_trrun_id, snapshot_path, it):
         it,
     )
 
-    CaffeCNNSnapshot.objects.create(
+    return CaffeCNNSnapshot.objects.create(
         training_run_id=caffe_cnn_trrun_id,
         iteration=it,
         sha1=sha1,
