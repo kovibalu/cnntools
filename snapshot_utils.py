@@ -12,8 +12,9 @@ from cnntools.utils import (add_caffe_to_path, get_file_content,
 from django.conf import settings
 
 
-def upload_snapshot(caffe_cnn_trrun_id, snapshot_path, it):
-    print 'Uploading snapshot {}...'.format(snapshot_path)
+def upload_snapshot(caffe_cnn_trrun_id, snapshot_path, it, verbose=True):
+    if verbose:
+        print 'Uploading snapshot {}...'.format(snapshot_path)
     snapshot_content = open(snapshot_path).read()
     sha1 = hashlib.sha1(snapshot_content).hexdigest()
 

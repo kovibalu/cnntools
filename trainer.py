@@ -2,12 +2,14 @@ import json
 import os
 import time
 
+from django.conf import settings
+
 from cnntools import caffefileproc
 from cnntools.common_utils import ensuredir
 from cnntools.models import CaffeCNNTrainingRun
 from cnntools.snapshot_utils import upload_snapshot
-from cnntools.utils import add_to_path, add_caffe_to_path, random_file_from_content
-from django.conf import settings
+from cnntools.utils import (add_caffe_to_path, add_to_path,
+                            random_file_from_content)
 
 
 def _load_training_run(caffe_cnn_trrun_id):
@@ -134,14 +136,16 @@ def setup_solverfile(model_name, model_file_content, solver_file_content,
     batch_size, testset_size = extract_batchsize_testsetsize(model_file_content)
 
     if batch_size and testset_size:
-        print 'Extracted batch_size ({0}) and testset_size ({1})'.format(
-            batch_size, testset_size)
+        if options['verbose']:
+            print 'Extracted batch_size ({0}) and testset_size ({1})'.format(
+                batch_size, testset_size)
         # Note the solver file should have exactly one test_iter
         solver_params.test_iter[0] = int(testset_size/batch_size)
     else:
-        print 'WARNING: Couldn\'t find the batch_size or the source file ' + \
-            'containing the testset, please set the test_iter to ' + \
-            'testset_size / batch_size!'
+        if options['verbose']:
+            print 'WARNING: Couldn\'t find the batch_size or the source file ' + \
+                'containing the testset, please set the test_iter to ' + \
+                'testset_size / batch_size!'
 
     # Setting random seed value for reproducible results
     solver_params.random_seed = settings.CAFFE_SEED
@@ -151,12 +155,14 @@ def setup_solverfile(model_name, model_file_content, solver_file_content,
     from caffe.proto import caffe_pb2
 
     if settings.CAFFE_GPU and (options['cpu'] is None or not options['cpu']):
-        print 'Using GPU'
+        if options['verbose']:
+            print 'Using GPU'
         caffe.set_mode_gpu()
         caffe.set_device(device_id)
         solver_params.solver_mode = caffe_pb2.SolverParameter.GPU
     else:
-        print 'Using CPU'
+        if options['verbose']:
+            print 'Using CPU'
         caffe.set_mode_cpu()
         solver_params.solver_mode = caffe_pb2.SolverParameter.CPU
 
@@ -167,7 +173,6 @@ def setup_solverfile(model_name, model_file_content, solver_file_content,
 
 def train_network(solver_params, solverfile_path, options,
                   caffe_cnn_trrun_id):
-    verbose = False
     add_caffe_to_path()
     import caffe
 
@@ -242,7 +247,7 @@ def train_network(solver_params, solverfile_path, options,
         start = time.clock()
         solver.step(1)  # SGD by Caffe
         elapsed = time.clock() - start
-        if verbose:
+        if options['verbose']:
             print 'One iteration took {:.2f} seconds'.format(elapsed)
 
         display = solver_params.display and it % solver_params.display == 0
@@ -280,7 +285,12 @@ def train_network(solver_params, solverfile_path, options,
                     it
                 )
             )
-            final_snapshot = upload_snapshot(caffe_cnn_trrun_id, snapshot_path, it)
+            final_snapshot = upload_snapshot(
+                caffe_cnn_trrun_id=caffe_cnn_trrun_id,
+                snapshot_path=snapshot_path,
+                it=it,
+                verbose=options['verbose'],
+            )
             final_snapshot_id = final_snapshot.id
 
     return final_snapshot_id
@@ -288,8 +298,9 @@ def train_network(solver_params, solverfile_path, options,
 
 def start_training(model_name, model_file_content, solver_file_content,
                    options, caffe_cnn_trrun_id, device_id=0):
-    print 'Running training for model {}...'.format(model_name)
-    print 'with options: {}'.format(options)
+    if options['verbose']:
+        print 'Running training for model {}...'.format(model_name)
+        print 'with options: {}'.format(options)
 
     solver_params, solverfile_path = setup_solverfile(
         model_name, model_file_content, solver_file_content, options, device_id
@@ -308,4 +319,3 @@ def start_training(model_name, model_file_content, solver_file_content,
     return train_network(
         solver_params, solverfile_path, options, caffe_cnn_trrun_id,
     )
-

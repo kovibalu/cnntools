@@ -45,6 +45,9 @@ def start_training_task(netid, options):
         )
         caffe_cnn_trrun_id = caffe_cnn_trrun.id
 
+    if 'verbose' not in options:
+        options['verbose'] = False
+
     if options['local']:
         device_id = 0
     else:

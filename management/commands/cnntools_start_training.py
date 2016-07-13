@@ -1,9 +1,10 @@
 import os
 from optparse import make_option
 
+from django.core.management.base import BaseCommand
+
 from cnntools.models import CaffeCNN
 from cnntools.tasks import start_training_task
-from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
@@ -59,6 +60,13 @@ class Command(BaseCommand):
             default='No description.',
             help='Description of the training run (what is different?)',
         ),
+        make_option(
+            '--noverbose',
+            action='store_false',
+            dest='verbose',
+            default=True,
+            help='If specified, we will not print additional information',
+        ),
     )
 
     def handle(self, *args, **options):
@@ -93,4 +101,3 @@ class Command(BaseCommand):
                 netid=netid,
                 options=options,
             )
-
