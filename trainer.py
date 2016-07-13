@@ -150,7 +150,7 @@ def setup_solverfile(model_name, model_file_content, solver_file_content,
     import caffe
     from caffe.proto import caffe_pb2
 
-    if settings.CAFFE_GPU and options['cpu'] is None:
+    if settings.CAFFE_GPU and (options['cpu'] is None or not options['cpu']):
         print 'Using GPU'
         caffe.set_mode_gpu()
         caffe.set_device(device_id)
