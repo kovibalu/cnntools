@@ -247,8 +247,8 @@ def train_network(solver_params, solverfile_path, options,
         start = time.clock()
         solver.step(1)  # SGD by Caffe
         elapsed = time.clock() - start
-        if options['verbose']:
-            print 'One iteration took {:.2f} seconds'.format(elapsed)
+        #if options['verbose']:
+            #print 'One iteration took {:.2f} seconds'.format(elapsed)
 
         display = solver_params.display and it % solver_params.display == 0
         if display:
