@@ -127,10 +127,17 @@ class DescriptorStoreHdf5(object):
         if self.verbose:
             print "DescriptorStoreHdf5._load... "
         start_time = time.time()
-        self._ids = self._file['ids']
-        self._data = self._file['data']
-        self._update_map()
-        self._created = True
+
+        try:
+            self._ids = self._file['ids']
+            self._data = self._file['data']
+            self._update_map()
+            self._created = True
+        except:
+            print 'Unhandled exception in flush!'
+            print 'File path: ', self._path
+            raise
+
         if self.verbose:
             print "DescriptorStoreHdf5._load: ids: %s, data: %s (%.3f s)" % (
                 self._ids.shape, self._data.shape, time.time() - start_time)
@@ -267,7 +274,13 @@ class DescriptorStoreHdf5(object):
             if self.verbose:
                 print "DescriptorStoreHdf5.flush: %s..." % self._path
             start_time = time.time()
-            self._file.flush()
+            try:
+                self._file.flush()
+            except:
+                print 'Unhandled exception in flush!'
+                print 'File path: ', self._path
+                raise
+
             if self.verbose:
                 print "DescriptorStoreHdf5.flush: %s done (%.3f s)" % (
                     self._path, time.time() - start_time)
@@ -328,15 +341,20 @@ class DescriptorStoreHdf5Buffer(object):
             return
 
         start_time = time.time()
-        ordering = np.argsort(self._pending_ids[:self._size])
-        self._store.block_append(
-            self._pending_ids[ordering],
-            self._pending_data[ordering, :])
+        try:
+            ordering = np.argsort(self._pending_ids[:self._size])
+            self._store.block_append(
+                self._pending_ids[ordering],
+                self._pending_data[ordering, :])
 
-        num_appended = self._size
-        #self._pending_ids.fill(0)
-        #self._pending_data.fill(np.nan)
-        self._size = 0
+            num_appended = self._size
+            #self._pending_ids.fill(0)
+            #self._pending_data.fill(np.nan)
+            self._size = 0
+        except:
+            print 'Unhandled exception in flush!'
+            print 'File path: ', self._store._path
+            raise
 
         elapsed_time = time.time() - start_time
         if elapsed_time > 10 and self.verbose:
@@ -468,6 +486,7 @@ class DescriptorStoreMemmap(object):
     def flush(self):
         if self.verbose:
             print 'flush: %s...' % self._meta_filename
+
         self._data.flush()
         self._ids.flush()
         self._save_meta()
