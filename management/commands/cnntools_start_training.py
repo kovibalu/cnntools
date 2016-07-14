@@ -4,7 +4,7 @@ from optparse import make_option
 from django.core.management.base import BaseCommand
 
 from cnntools.models import CaffeCNN
-from cnntools.tasks import start_training_task
+from cnntools.tasks import schedule_training
 
 
 class Command(BaseCommand):
@@ -91,13 +91,7 @@ class Command(BaseCommand):
                         'want to continue training from a solverstate!'
                     ))
 
-        if options['local']:
-            start_training_task(
-                netid=netid,
-                options=options,
-            )
-        else:
-            start_training_task.delay(
-                netid=netid,
-                options=options,
-            )
+        schedule_training(
+            netid=netid,
+            options=options,
+        )

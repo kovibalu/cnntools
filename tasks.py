@@ -4,7 +4,7 @@ import numpy as np
 
 from celery import shared_task
 from cnntools import packer
-from cnntools.common_utils import progress_bar, import_function
+from cnntools.common_utils import import_function, progress_bar
 from cnntools.fet_extractor import load_fet_extractor
 from cnntools.models import CaffeCNN
 from cnntools.redis_aggregator import batch_ready
@@ -24,8 +24,7 @@ def get_fet_trafo_types():
     }
 
 
-@shared_task(queue='gpu-train')
-def start_training_task(netid, options):
+def schedule_training(netid, options):
     caffe_cnn = CaffeCNN.objects.get(netid=netid)
     model_file_content = caffe_cnn.get_model_file_content()
     solver_file_content = caffe_cnn.get_solver_file_content()
@@ -49,12 +48,31 @@ def start_training_task(netid, options):
         options['verbose'] = False
 
     if options['local']:
+        task_func = start_training_task
+    else:
+        task_func = start_training_task.delay
+
+    task_func(
+        model_name=netid,
+        model_file_content=model_file_content,
+        solver_file_content=solver_file_content,
+        options=options,
+        caffe_cnn_trrun_id=caffe_cnn_trrun_id,
+    )
+
+    return caffe_cnn_trrun_id
+
+
+@shared_task(queue='gpu-train')
+def start_training_task(model_name, model_file_content, solver_file_content,
+                        options, caffe_cnn_trrun_id):
+    if options['local']:
         device_id = 0
     else:
         device_id = get_worker_gpu_device_id()
 
-    return start_training(
-        model_name=netid,
+    start_training(
+        model_name=model_name,
         model_file_content=model_file_content,
         solver_file_content=solver_file_content,
         options=options,

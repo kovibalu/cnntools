@@ -133,41 +133,6 @@ def filter_disp_type(disp_config, output_name):
     return 'other'
 
 
-def get_svgs_from_all_outputs(all_outputs, simplified=False):
-    '''
-    Parses all outputs of multiple networks and bundles them by output name
-    (e.g., metal_accuracy) and plots them differently depending on the output
-    type (loss, accuracy, other).
-    '''
-    disp_config = get_disp_config()
-
-    # Group by output names
-    val_results = collections.defaultdict(list)
-    for trrun_name, outputs, output_names in all_outputs:
-        # We are only interested in the validation performance
-        outputs = outputs[1]
-        output_names = output_names[1]
-
-        for output_num, output_name in output_names.iteritems():
-            val_results[output_name].append((
-                trrun_name,
-                create_figure_data(outputs[output_num])
-            ))
-
-    # Go through each figure data
-    svgs = {}
-    for output_name, figure_data in val_results.iteritems():
-        disp_type = filter_disp_type(disp_config, output_name)
-
-        line_names, figure_arrs = zip(*figure_data)
-        svgs[output_name] = plot_svg_figures(
-            figure_arrs, line_names, disp_config[disp_type],
-            'Iteration number', simplified
-        )
-
-    return svgs
-
-
 def plot_svg_figures(figure_arrs, line_names, dc, xlabel, simplified):
     '''Plots a bunch of figures with the specified display config (dc)'''
 

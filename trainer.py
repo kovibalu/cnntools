@@ -95,8 +95,8 @@ def extract_batchsize_testsetsize(model_file_content):
 
 
 def setup_solverfile(model_name, model_file_content, solver_file_content,
-                     options, device_id):
-    rand_name = str(time.time())
+                     options, caffe_cnn_trrun_id, device_id):
+    rand_name = '%s-%s' % (time.time(), caffe_cnn_trrun_id)
     root_path = os.path.join(
         settings.CAFFE_ROOT,
         'training_runs',
@@ -124,6 +124,9 @@ def setup_solverfile(model_name, model_file_content, solver_file_content,
     # Switch on debug_info to facilitate debugging
     if 'debug_info' in options and options['debug_info'] is not None:
         solver_params.debug_info = options['debug_info']
+
+    if 'weight_decay' in options and options['weight_decay'] is not None:
+        solver_params.weight_decay = options['weight_decay']
 
     snapshot_path = os.path.join(root_path, 'snapshots')
     ensuredir(snapshot_path)
@@ -244,9 +247,9 @@ def train_network(solver_params, solverfile_path, options,
 
     final_snapshot_id = None
     for it in range(start_it, max_iter+1):
-        start = time.clock()
+        #start = time.clock()
         solver.step(1)  # SGD by Caffe
-        elapsed = time.clock() - start
+        #elapsed = time.clock() - start
         #if options['verbose']:
             #print 'One iteration took {:.2f} seconds'.format(elapsed)
 
@@ -303,7 +306,12 @@ def start_training(model_name, model_file_content, solver_file_content,
         print 'with options: {}'.format(options)
 
     solver_params, solverfile_path = setup_solverfile(
-        model_name, model_file_content, solver_file_content, options, device_id
+        model_name=model_name,
+        model_file_content=model_file_content,
+        solver_file_content=solver_file_content,
+        options=options,
+        caffe_cnn_trrun_id=caffe_cnn_trrun_id,
+        device_id=device_id,
     )
 
     # Save the final solver file's content to database

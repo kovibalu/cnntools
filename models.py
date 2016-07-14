@@ -9,7 +9,7 @@ from django.utils.timezone import now
 
 from cnntools.common_utils import (FileUploadPath, FileUploadPathKeepName,
                                    ModelBase, get_opensurfaces_storage)
-from cnntools.utils import get_file_content, get_svgs_from_output
+from cnntools.utils import get_file_content, get_svgs_from_output, filter_disp_type
 
 STORAGE = get_opensurfaces_storage()
 
@@ -109,12 +109,38 @@ class CaffeCNNTrainingRun(ModelBase):
     description = models.TextField(null=True, blank=True)
 
     def is_finished(self):
-        # It's finished if there was no update in 30 minutes
-        return self.modified < now() - timedelta(minutes=30)
+        # It's finished if there was no update in 10 hours
+        return self.modified < now() - timedelta(hours=10) or \
+            (self.max_iteration != 0 and self.final_iteration == self.max_iteration)
+
+    def best_val_value(self, output_name, use_max=True):
+        outputs, output_names = self.get_outputs()
+        # We are only interested in the validation results
+        outputs = outputs[1]
+        output_names = output_names[1]
+        # Search for output number by output name
+        # Note: we choose the first one with the specified name, beware of name
+        # collision!
+        for o_num, o_name in output_names.iteritems():
+            if o_name == output_name:
+                output_num = o_num
+                break
+
+        op = outputs[output_num]
+        if not op:
+            return None
+
+        # Find iteration corresponding to the highest/lowest value
+        itnum_value_pairs = sorted(op.items(), key=lambda x: x[1], reverse=use_max)
+        return itnum_value_pairs[0]
 
     @property
     def runtime(self):
         return self.modified - self.added
+
+    @property
+    def final_shapshot(self):
+        return self.snapshots.order_by('-id')[0]
 
     @property
     def est_rem_time(self):
