@@ -13,3 +13,4 @@
 {% endif %}
 <p><b>Iteration Number:</b> {{ caffe_cnn_trrun.final_iteration }} </p>
 <p><b>Maximum Iteration Number:</b> {{ caffe_cnn_trrun.max_iteration }} </p>
+<p><b>Net Graph:</b> <a href="{% url 'cnntools-caffe-cnn-trainingrun-graph' caffe_cnn_trrun.id %}"> Link</a></p>

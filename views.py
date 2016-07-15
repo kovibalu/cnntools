@@ -1,5 +1,6 @@
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404, render
+from django.http import HttpResponse
 
 from cnntools import utils
 from cnntools.snapshot_utils import load_net_from_snapshot
@@ -31,12 +32,10 @@ def caffe_cnn_detail(
     model_file_content = caffe_cnn.get_model_file_content()
     solver_file_content = caffe_cnn.get_solver_file_content()
     deploy_file_content = caffe_cnn.get_deploy_file_content()
-    net_graph_svg = utils.gen_net_graph_svg(model_file_content)
 
     # sections on the page
     nav_section_keys = [
         ("description", 'Description'),
-        ("graph", 'Net Graph'),
         ("trainruns", 'Training Runs'),
         ("model_file", 'Model File Content'),
         ("solver_file", 'Solver File Content'),
@@ -55,7 +54,6 @@ def caffe_cnn_detail(
         'subnav': 'models',
         'nav_sections': nav_sections,
         'caffe_cnn': caffe_cnn,
-        'net_graph_svg': net_graph_svg,
         'model_file_content': model_file_content,
         'solver_file_content': solver_file_content,
         'deploy_file_content': deploy_file_content,
@@ -77,12 +75,10 @@ def caffe_cnn_trainingrun_detail(
     model_file_content = caffe_cnn_trrun.get_model_file_content()
     solver_file_content = caffe_cnn_trrun.get_solver_file_content()
     deploy_file_content = caffe_cnn_trrun.get_deploy_file_content()
-    net_graph_svg = utils.gen_net_graph_svg(model_file_content)
 
     # sections on the page
     nav_section_keys = [
         ("description", 'Description'),
-        ("graph", 'Net Graph'),
         ("figures", 'Figures'),
         ("model_file", 'Model File Content'),
         ("deploy_file", 'Deploy File Content'),
@@ -101,7 +97,6 @@ def caffe_cnn_trainingrun_detail(
         'nav': 'cnntools',
         'subnav': 'models',
         'nav_sections': nav_sections,
-        'net_graph_svg': net_graph_svg,
         'caffe_cnn_trrun': caffe_cnn_trrun,
         'model_file_content': model_file_content,
         'solver_file_content': solver_file_content,
@@ -174,3 +169,13 @@ def caffe_cnn_snapshot_detail(
     return render(request, template, context)
 
 
+@staff_member_required
+def caffe_cnn_graph(request, pk):
+    entry = get_object_or_404(CaffeCNN, pk=pk)
+    return HttpResponse(entry.get_net_graph_svg(), content_type='image/svg+xml')
+
+
+@staff_member_required
+def caffe_cnn_trainingrun_graph(request, pk):
+    entry = get_object_or_404(CaffeCNNTrainingRun, pk=pk)
+    return HttpResponse(entry.get_net_graph_svg(), content_type='image/svg+xml')

@@ -8,3 +8,8 @@ msgpack-python
 msgpack_numpy
 protobuf
 
+# Net graph visualization
+# Note: you should run sudo apt-get install graphviz
+pygraphviz
+pydot
+

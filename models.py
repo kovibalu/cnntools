@@ -1,15 +1,15 @@
 import json
 from datetime import timedelta
 
+from cnntools.common_utils import (FileUploadPath, FileUploadPathKeepName,
+                                   ModelBase, get_opensurfaces_storage)
+from cnntools.utils import (gen_net_graph_svg, get_file_content,
+                            get_svgs_from_output)
 from django.db import models
 # Receive the pre_delete signal and delete the file associated with the model instance.
 from django.db.models.signals import pre_delete
 from django.dispatch.dispatcher import receiver
 from django.utils.timezone import now
-
-from cnntools.common_utils import (FileUploadPath, FileUploadPathKeepName,
-                                   ModelBase, get_opensurfaces_storage)
-from cnntools.utils import get_file_content, get_svgs_from_output, filter_disp_type
 
 STORAGE = get_opensurfaces_storage()
 
@@ -56,6 +56,9 @@ class CaffeCNN(ModelBase):
 
     def get_deploy_file_content(self):
         return get_file_content(self.deploy_file)
+
+    def get_net_graph_svg(self):
+        return gen_net_graph_svg(self.get_model_file_content())
 
     def __unicode__(self):
         return "netid: %s" % (self.netid)
@@ -171,6 +174,9 @@ class CaffeCNNTrainingRun(ModelBase):
 
     def get_deploy_file_content(self):
         return get_file_content(self.deploy_file_snapshot)
+
+    def get_net_graph_svg(self):
+        return gen_net_graph_svg(self.get_model_file_content())
 
 
 @receiver(pre_delete, sender=CaffeCNN)
