@@ -27,6 +27,13 @@ class Command(BaseCommand):
             help='Base learning rate to start with',
         ),
         make_option(
+            '--weight_decay',
+            action='store',
+            type='float',
+            dest='weight_decay',
+            help='Weight decay',
+        ),
+        make_option(
             '--weights',
             action='store',
             type='string',

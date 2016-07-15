@@ -1,4 +1,3 @@
-import collections
 import json
 import os
 import random
@@ -296,4 +295,16 @@ def create_default_trrun(caffe_cnn, model_file_content, solver_file_content,
         description=description,
         outputs_json=json.dumps([{}, {}]),
         output_names_json=json.dumps([{}, {}]),
+    )
+
+
+def gen_net_graph_svg(model_file_content):
+    add_caffe_to_path()
+    from caffe.draw import draw_net
+    from cnntools.caffefileproc import parse_model_definition_file_content
+    model_params = parse_model_definition_file_content(model_file_content)
+    return draw_net(
+        caffe_net=model_params,
+        rankdir='LR',
+        ext='svg',
     )
