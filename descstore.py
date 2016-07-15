@@ -229,17 +229,22 @@ class DescriptorStoreHdf5(object):
     def block_get(self, ids, dtype=None, ret=None, batchsize=512, show_progress=False):
         """ Efficiently fetch a block of descriptors by IDs, optionally
         converting them to another dtype. """
-        if ret is None:
-            ret_dtype = dtype if dtype else self._data.dtype
-            ret = np.empty((len(ids), self._data.shape[1]), dtype=ret_dtype)
-        if len(ids):
-            # Sorting and batching is necessary due to the requirments of "fancy indexing"
-            # (http://docs.h5py.org/en/latest/high/dataset.html#fancy-indexing).
-            indices = np.array([self._id_to_idx[id] for id in ids])
-            order = np.argsort(indices)
-            for i in progress_bar(xrange(0, len(ids), batchsize), show_progress=show_progress):
-                sub_order = order[i:i+batchsize]
-                ret[sub_order, :] = self._data[indices[sub_order], :]
+        try:
+            if ret is None:
+                ret_dtype = dtype if dtype else self._data.dtype
+                ret = np.empty((len(ids), self._data.shape[1]), dtype=ret_dtype)
+            if len(ids):
+                # Sorting and batching is necessary due to the requirments of "fancy indexing"
+                # (http://docs.h5py.org/en/latest/high/dataset.html#fancy-indexing).
+                indices = np.array([self._id_to_idx[id] for id in ids])
+                order = np.argsort(indices)
+                for i in progress_bar(xrange(0, len(ids), batchsize), show_progress=show_progress):
+                    sub_order = order[i:i+batchsize]
+                    ret[sub_order, :] = self._data[indices[sub_order], :]
+        except:
+            print 'Unhandled exception in block_get!'
+            print 'File path: ', self._path
+            raise
         return ret
 
     def has_id(self, id):
