@@ -198,6 +198,7 @@ def retrieve_features(
     slug,
     verbose=False,
 ):
+    ret_item_ids = item_ids is None
     features = {}
     for feature_name in feature_name_list:
         filename = get_descstore_filename(slug, feature_name)
@@ -206,6 +207,7 @@ def retrieve_features(
             readonly=True,
             verbose=verbose,
         )
+        # Will be called only once
         if item_ids is None:
             item_ids = src_store.ids[...]
 
@@ -214,7 +216,10 @@ def retrieve_features(
         )
         del src_store
 
-    return features
+    if ret_item_ids:
+        return item_ids, features
+    else:
+        return features
 
 
 def compute_features(
