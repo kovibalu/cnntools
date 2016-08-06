@@ -9,6 +9,7 @@
 			<th>Date Added</th>
 			<th>Iteration Number</th>
 			<th>SHA1</th>
+			<th>Size</th>
 		</tr>
 	</thead>
 
@@ -18,6 +19,7 @@
 		<td>{{ entry.added|naturaltime }}</td>
 		<td>{{ entry.iteration }}</td>
 		<td>{{ entry.sha1 }}</td>
+		<td><a href="{{ entry.model_snapshot.url }}">{{ entry.model_snapshot.file.size|filesizeformat }}</a></td>
 	</tr>
 	{% endfor %}
 </table>
