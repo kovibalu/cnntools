@@ -29,10 +29,10 @@ def unpackb(packed, use_msgpack=True):
     return dic['version'], dic['data']
 
 
-def unpackb_version(packed, expected_version, use_msgpack=True):
+def unpackb_version(packed, expected_version, use_list=True, use_msgpack=True):
     """ Unpack an object x (that can contain numpy objects) """
     if use_msgpack:
-        dic = msgpack.unpackb(packed, object_hook=msgpack_numpy.decode)
+        dic = msgpack.unpackb(packed, object_hook=msgpack_numpy.decode, use_list=use_list)
     else:
         dic = pickle.load(packed)
 
@@ -44,9 +44,14 @@ def unpackb_version(packed, expected_version, use_msgpack=True):
     return dic['data']
 
 
-def funpackb_version(expected_version, filepath, use_msgpack=True):
+def funpackb_version(expected_version, filepath, use_list=True, use_msgpack=True):
     """ Unpack an object x from file (that can contain numpy objects) """
     with open(filepath, 'r') as f:
         packed = f.read()
 
-    return unpackb_version(packed, expected_version, use_msgpack)
+    return unpackb_version(
+        packed=packed,
+        expected_version=expected_version,
+        use_list=use_list,
+        use_msgpack=use_msgpack,
+    )
