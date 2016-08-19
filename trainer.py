@@ -174,6 +174,23 @@ def setup_solverfile(model_name, model_file_content, solver_file_content,
     return solver_params, solverfile_path
 
 
+def get_solver_type(caffe, solver_params, verbose=True):
+    if not hasattr(solver_params, 'type'):
+        solver_type = caffe.SGDSolver
+    else:
+        valid_solver_names = [
+            'SGD', 'AdaDelta', 'AdaGrad', 'Adam', 'Nesterov', 'RMSProp',
+        ]
+        if solver_params.type not in valid_solver_names:
+            raise ValueError('Unexpected solver type: %s' % solver_params.type)
+
+        solver_type = getattr(caffe, solver_params.type + 'Solver')
+
+    if verbose:
+        print 'Creating solver "%s"...' % solver_type.__name__
+    return solver_type
+
+
 def train_network(solver_params, solverfile_path, options,
                   caffe_cnn_trrun_id):
     add_caffe_to_path()
@@ -184,7 +201,7 @@ def train_network(solver_params, solverfile_path, options,
 
     restore = False
 
-    solver = caffe.SGDSolver(solverfile_path)
+    solver = get_solver_type(caffe, solver_params)(solverfile_path)
     if 'weights' in options and options['weights'] is not None:
         _, ext = os.path.splitext(options['weights'])
         if ext == '.solverstate':
