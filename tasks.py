@@ -4,7 +4,7 @@ import numpy as np
 
 from celery import shared_task
 from cnntools import packer
-from cnntools.common_utils import import_function, progress_bar
+from cnntools.common_utils import ensuredir, import_function, progress_bar
 from cnntools.fet_extractor import load_fet_extractor
 from cnntools.models import CaffeCNN
 from cnntools.redis_aggregator import batch_ready
@@ -176,3 +176,53 @@ def compute_cnn_features_gpu_task(
     # Save results in redis
     batch_ready(task_id, batch_id, packer.packb(fets, settings.API_VERSION))
 
+
+def _save_image(img_file, filename, format, dimensions):
+    import shutil
+    from PIL import Image
+    from imagekit.utils import open_image
+    from pilkit.utils import extension_to_format
+    from cnntools.common_utils import resize_mindim
+
+    # Skip if we already downloaded the image
+    if os.path.exists(filename):
+        return
+
+    parent_dir = os.path.dirname(filename)
+    ensuredir(parent_dir)
+
+    if not dimensions and not format:
+        img_file.seek(0)
+        with open(filename, 'wb') as f:
+            shutil.copyfileobj(img_file, f)
+    else:
+        if dimensions and len(dimensions) == 2:
+            image = open_image(img_file)
+
+            if image.size != tuple(dimensions):
+                image = image.resize(dimensions, Image.ANTIALIAS)
+        elif dimensions and len(dimensions) == 1:
+            # Here we specified the minimum dimension
+            image = open_image(img_file)
+            image = resize_mindim(image, dimensions[0])
+        else:
+            image = open_image(img_file)
+
+        if not format:
+            format = extension_to_format(os.path.splitext(filename)[1].lower())
+
+        image.save(filename, format)
+
+
+@shared_task(queue='artifact')
+def download_image_task(item_type, item_ids, filenames, img_attr, format=None, dimensions=None):
+    """ Downloads an image and stores it, potentially downsampling it and
+    potentially converting formats """
+    item_dic = item_type.objects.in_bulk(item_ids)
+    for item_id, filename in zip(item_ids, filenames):
+        _save_image(
+            img_file=getattr(item_dic[item_id], img_attr),
+            filename=filename,
+            format=format,
+            dimensions=dimensions,
+        )

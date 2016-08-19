@@ -171,3 +171,14 @@ def import_function(module_function_str):
     )
     return getattr(imported_module, func_name)
 
+
+def resize_mindim(img, mindim):
+    '''
+    Resizes a PIL image so that the minimum dimension becomes mindim
+    '''
+    from pilkit.processors import ResizeToFit
+    w, h = img.size
+    if h < w:
+        return ResizeToFit(height=mindim, upscale=True).process(img)
+    else:
+        return ResizeToFit(width=mindim, upscale=True).process(img)
