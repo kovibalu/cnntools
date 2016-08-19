@@ -68,8 +68,8 @@ def make_trainingfiles_simple_label(rel_root_path, filename_suffix, item_type,
     same order as the corresponding items in item_ids. Each element is an
     integer representing a label.
     """
-    def gen_line_func(image_path, y_true):
-        return ' '.join([image_path, str(y_true)])
+    def gen_line_func(image_paths, y_true):
+        return ' '.join([image_paths[0], str(y_true)])
 
     make_trainingfiles(
         rel_root_path, filename_suffix, item_type, item_ids, skip_test,
@@ -119,9 +119,9 @@ def make_trainingfiles_multi_tag(rel_root_path, filename_suffix, item_type,
     are a list of integers each representing a tag. This is essentially a 3D
     array, but for each item and tag group, the number of tags can vary.
     """
-    def gen_line_func(image_path, tags_list):
+    def gen_line_func(image_paths, tags_list):
         line_dic = {
-            'filepath': image_path,
+            'filepath': image_paths[0],
             'tags_dic': tags_list,
         }
         # One line serialized to json
