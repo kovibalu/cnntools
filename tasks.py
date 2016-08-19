@@ -215,7 +215,7 @@ def _save_image(img_file, filename, format, dimensions):
 
 
 @shared_task(queue='artifact')
-def download_image_task(item_type, item_ids, filenames, img_attr, format=None, dimensions=None):
+def download_image_batch_task(item_type, item_ids, filenames, img_attr, format=None, dimensions=None):
     """ Downloads an image and stores it, potentially downsampling it and
     potentially converting formats """
     item_dic = item_type.objects.in_bulk(item_ids)

@@ -182,3 +182,10 @@ def resize_mindim(img, mindim):
         return ResizeToFit(height=mindim, upscale=True).process(img)
     else:
         return ResizeToFit(width=mindim, upscale=True).process(img)
+
+
+def make_prefix_dirs(root_path, filename, levels=3):
+    chunks = [root_path]
+    chunks += [filename[i] for i in range(levels)]
+
+    return os.path.join(*chunks)
