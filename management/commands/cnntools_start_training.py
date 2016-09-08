@@ -1,10 +1,10 @@
+import json
 import os
 from optparse import make_option
 
-from django.core.management.base import BaseCommand
-
 from cnntools.models import CaffeCNN
 from cnntools.tasks import schedule_training
+from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
@@ -74,6 +74,14 @@ class Command(BaseCommand):
             default=True,
             help='If specified, we will not print additional information',
         ),
+        make_option(
+            '--data_layer_params',
+            action='store',
+            type='string',
+            dest='data_layer_params',
+            default='{}',
+            help='Additional parameters passed to the python data layer',
+        ),
     )
 
     def handle(self, *args, **options):
@@ -98,7 +106,11 @@ class Command(BaseCommand):
                         'want to continue training from a solverstate!'
                     ))
 
+        if 'data_layer_params' in options:
+            options['data_layer_params'] = json.loads(options['data_layer_params'])
+
         schedule_training(
             netid=netid,
             options=options,
         )
+

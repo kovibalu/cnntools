@@ -202,6 +202,7 @@ def train_network(solver_params, solverfile_path, options,
     restore = False
 
     solver = get_solver_type(caffe, solver_params)(solverfile_path)
+    solver_nets = [solver.net] + list(solver.test_nets)
     if 'weights' in options and options['weights'] is not None:
         _, ext = os.path.splitext(options['weights'])
         if ext == '.solverstate':
@@ -210,19 +211,31 @@ def train_network(solver_params, solverfile_path, options,
             )
             restore = True
         else:
-            solver.net.copy_from(
-                os.path.join(settings.CAFFE_ROOT, options['weights'])
-            )
-    # If the data layer is python, we try to set the random seed for
-    # reproducibility
-    # Note: The python implementation of the layer should have a
-    # "set_random_seed" function. If we can't find a function with this name,
-    # we won't set the random seed
-    data_layer = solver.net.layers[0]
-    if data_layer.type == 'Python':
-        set_random_seed = getattr(data_layer, 'set_random_seed', None)
-        if callable(set_random_seed):
-            set_random_seed(settings.CAFFE_SEED)
+            for n in solver_nets:
+                n.copy_from(
+                    os.path.join(settings.CAFFE_ROOT, options['weights'])
+                )
+
+    print 'solver_net count:', len(solver_nets)
+    for n in solver_nets:
+        data_layer = n.layers[0]
+        # If the data layer is python, we try to set the random seed for
+        # reproducibility
+        if data_layer.type == 'Python':
+            # Note: The python implementation of the layer should have a
+            # "set_random_seed" function. If we can't find a function with this name,
+            # we won't set the random seed
+            set_random_seed_func = getattr(data_layer, 'set_random_seed', None)
+            if callable(set_random_seed_func):
+                set_random_seed_func(settings.CAFFE_SEED)
+
+            # Note: The python implementation of the layer should have a
+            # "set_params" function.
+            set_params_func = getattr(data_layer, 'set_params', None)
+            if 'data_layer_params' in options and callable(set_params_func):
+                set_params_func(options['data_layer_params'])
+
+        n.reshape()
 
     # {key: output_num, value: output_name}
     output_names = [{}, {}]
