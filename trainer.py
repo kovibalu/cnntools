@@ -96,7 +96,7 @@ def extract_batchsize_testsetsize(model_file_content):
 
 def setup_solverfile(model_name, model_file_content, solver_file_content,
                      options, caffe_cnn_trrun_id, device_id):
-    rand_name = '%s-%s' % (time.time(), caffe_cnn_trrun_id)
+    rand_name = '%d' % caffe_cnn_trrun_id
     root_path = os.path.join(
         settings.CAFFE_ROOT,
         'training_runs',
@@ -201,7 +201,7 @@ def train_network(solver_params, solverfile_path, options,
 
     restore = False
 
-    solver = get_solver_type(caffe, solver_params)(solverfile_path)
+    solver = get_solver_type(caffe, solver_params)(str(solverfile_path))
     solver_nets = [solver.net] + list(solver.test_nets)
     if 'weights' in options and options['weights'] is not None:
         _, ext = os.path.splitext(options['weights'])
