@@ -1,6 +1,9 @@
 {% load humanize %}
 
 <p><b>Net Name: </b><a href="{% url 'cnntools-caffe-cnn-detail' caffe_cnn_trrun.net.id %}">{{ caffe_cnn_trrun.net.netid }}</a></p>
+{% if caffe_cnn_trrun.net.html_short_description %}
+<p><b>Net Short Description: </b> {{ caffe_cnn_trrun.net.html_short_description|safe }}</p>
+{% endif %}
 <p><b>Net Description:</b> {{ caffe_cnn_trrun.net.description }} </p>
 <p><b>Training Run Description:</b> {{ caffe_cnn_trrun.description }} </p>
 <p><b>Start Date:</b> {{ caffe_cnn_trrun.added|naturaltime }} </p>

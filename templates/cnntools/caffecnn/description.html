@@ -1,4 +1,7 @@
-<p><b>Name:</b> {{ caffe_cnn.netid }} </p>
+<p><b>Name: </b> {{ caffe_cnn.netid }}</p>
+{% if caffe_cnn.html_short_description %}
+<p><b>Short Description: </b> {{ caffe_cnn.html_short_description|safe }}</p>
+{% endif %}
 <p><b>Description:</b> {{ caffe_cnn.description }} </p>
 <p><b>Net Graph:</b> <a href="{% url 'cnntools-caffe-cnn-graph' caffe_cnn.id %}"> Link</a></p>
 
