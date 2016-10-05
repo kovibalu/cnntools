@@ -17,10 +17,15 @@ STORAGE = get_opensurfaces_storage()
 class CaffeCNN(ModelBase):
     """ A Caffe CNN model for training """
 
-    # human-friendly description
+    #: human-friendly description
     description = models.TextField()
 
-    # network name
+    #: human-friendly short description which can be shown as a tooltip. This
+    #: can contain html too, for example a formula which describes how the
+    #: network works.
+    html_short_description = models.TextField(default='')
+
+    #: network name
     netid = models.CharField(max_length=64, unique=True)
 
     FILE_OPTS = {
