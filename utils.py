@@ -223,6 +223,7 @@ def plot_svg_net_weights(weights_arr, title, xlabel, ylabel):
 
 
 def get_svgs_from_net(net):
+    np.set_printoptions(threshold=1e6)
     weight_plots = []
     for layer_name, weights in net.params.iteritems():
         for i, label in enumerate(['weights', 'biases']):
@@ -244,6 +245,10 @@ def get_svgs_from_net(net):
                 'title': title,
                 'svg': svg,
                 'shape': shape_text,
+                'matrix': np.array_str(
+                    weights[i].data, precision=3, suppress_small=True,
+                    max_line_width=1e5,
+                )
             })
 
     return weight_plots

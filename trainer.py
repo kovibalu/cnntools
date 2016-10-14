@@ -128,6 +128,9 @@ def setup_solverfile(model_name, model_file_content, solver_file_content,
     if 'weight_decay' in options and options['weight_decay'] is not None:
         solver_params.weight_decay = options['weight_decay']
 
+    if 'max_iter' in options and options['max_iter'] is not None:
+        solver_params.max_iter = options['max_iter']
+
     snapshot_path = os.path.join(root_path, 'snapshots')
     ensuredir(snapshot_path)
     solver_params.snapshot_prefix = os.path.join(
@@ -309,15 +312,19 @@ def train_network(solver_params, solverfile_path, options,
                 max_iter,
             )
 
-        snapshot = it % solver_params.snapshot == 0 and it != 0
-        if snapshot:
-            snapshot_path = os.path.join(
-                settings.CAFFE_ROOT,
-                '{}_iter_{}.caffemodel'.format(
-                    solver_params.snapshot_prefix,
-                    it
-                )
+        snapshot_path = os.path.join(
+            settings.CAFFE_ROOT,
+            '{}_iter_{}.caffemodel'.format(
+                solver_params.snapshot_prefix,
+                it
             )
+        )
+
+        snapshot = it % solver_params.snapshot == 0 and (it != 0 or options.get('start_snapshot', False))
+        if snapshot:
+            if it == 0:
+                solver.net.save(snapshot_path)
+
             final_snapshot = upload_snapshot(
                 caffe_cnn_trrun_id=caffe_cnn_trrun_id,
                 snapshot_path=snapshot_path,

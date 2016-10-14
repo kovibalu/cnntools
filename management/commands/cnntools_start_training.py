@@ -16,7 +16,6 @@ class Command(BaseCommand):
             '--local',
             action='store_true',
             dest='local',
-            default=False,
             help='Start the training locally, instead of dispatching to Celery.',
         ),
         make_option(
@@ -71,7 +70,6 @@ class Command(BaseCommand):
             '--noverbose',
             action='store_false',
             dest='verbose',
-            default=True,
             help='If specified, we will not print additional information',
         ),
         make_option(
@@ -81,6 +79,12 @@ class Command(BaseCommand):
             dest='data_layer_params',
             default='{}',
             help='Additional parameters passed to the python data layer',
+        ),
+        make_option(
+            '--start_snapshot',
+            action='store_true',
+            dest='start_snapshot',
+            help='If specified, we will save a snapshot at before starting training',
         ),
     )
 

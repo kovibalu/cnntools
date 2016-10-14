@@ -164,7 +164,6 @@ def caffe_cnn_snapshot_detail(
         'caffe_cnn_trrun': snapshot.training_run,
         'weight_plots': weight_plots,
     }
-    print len(weight_plots)
 
     return render(request, template, context)
 
