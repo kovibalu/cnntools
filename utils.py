@@ -241,14 +241,38 @@ def get_svgs_from_net(net):
                 str(x)
                 for x in weights[i].data.shape
             ])
+            array_str = np.array_str(
+                weights[i].data, precision=3, suppress_small=True,
+                max_line_width=1e5,
+            )
+            lines = array_str.split('\n')
+            lines_new = []
+            for l in lines:
+                tokens = l.split()
+                tokens_new = []
+                train_started = False
+                for t in tokens:
+                    if t == '0.' or t == '-0.':
+                        if train_started:
+                            tokens_new.append(t)
+                        else:
+                            tokens_new.append('<span style="color: lightgray;">0.')
+                        train_started = True
+                    else:
+                        if train_started:
+                            tokens_new[-1] += '</span>'
+                        tokens_new.append(t)
+                        train_started = False
+
+                lines_new.append(' '.join(tokens_new))
+
+            array_str = '\n'.join(lines_new)
+
             weight_plots.append({
                 'title': title,
                 'svg': svg,
                 'shape': shape_text,
-                'matrix': np.array_str(
-                    weights[i].data, precision=3, suppress_small=True,
-                    max_line_width=1e5,
-                )
+                'matrix': array_str,
             })
 
     return weight_plots
