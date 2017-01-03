@@ -1,10 +1,11 @@
-from django.contrib.admin.views.decorators import staff_member_required
-from django.shortcuts import get_object_or_404, render
-from django.http import HttpResponse
+import json
 
 from cnntools import utils
+from cnntools.models import CaffeCNN, CaffeCNNSnapshot, CaffeCNNTrainingRun
 from cnntools.snapshot_utils import load_net_from_snapshot
-from cnntools.models import CaffeCNN, CaffeCNNTrainingRun, CaffeCNNSnapshot
+from django.contrib.admin.views.decorators import staff_member_required
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, render
 
 
 @staff_member_required
@@ -70,7 +71,8 @@ def caffe_cnn_trainingrun_detail(
 
     caffe_cnn_trrun = get_object_or_404(CaffeCNNTrainingRun, pk=pk)
     outputs, output_names = caffe_cnn_trrun.get_outputs()
-    svgs = utils.get_svgs_from_output(outputs, output_names)
+    #svgs = utils.get_svgs_from_output(outputs, output_names)
+    figures = utils.get_figures_from_output(outputs, output_names)
 
     model_file_content = caffe_cnn_trrun.get_model_file_content()
     solver_file_content = caffe_cnn_trrun.get_solver_file_content()
@@ -101,7 +103,8 @@ def caffe_cnn_trainingrun_detail(
         'model_file_content': model_file_content,
         'solver_file_content': solver_file_content,
         'deploy_file_content': deploy_file_content,
-        'svgs': svgs,
+        'figures': figures,
+        'figures_json': json.dumps(figures),
     }
 
     return render(request, template, context)
@@ -178,3 +181,4 @@ def caffe_cnn_graph(request, pk):
 def caffe_cnn_trainingrun_graph(request, pk):
     entry = get_object_or_404(CaffeCNNTrainingRun, pk=pk)
     return HttpResponse(entry.get_net_graph_svg(), content_type='image/svg+xml')
+

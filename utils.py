@@ -102,12 +102,24 @@ def plot_and_save_2D_array(filename, arr, xlabel='', xinterval=None, ylabel='', 
     plot_and_save_2D_arrays(filename, [arr], xlabel, xinterval, ylabel, yinterval, line_names=[], simplified=simplified)
 
 
-def create_figure_data(data_dict):
+def create_figure_data_arr(data_dict):
     ret = np.empty((len(data_dict), 2))
     keys = sorted(data_dict.keys(), key=lambda x: int(x))
     for idx, itnum in enumerate(keys):
         ret[idx, 0] = int(itnum)
         ret[idx, 1] = float(data_dict[itnum])
+
+    return ret
+
+
+def create_figure_data_json(data_dict):
+    ret = []
+    keys = sorted(data_dict.keys(), key=lambda x: int(x))
+    for idx, itnum in enumerate(keys):
+        ret.append(dict(
+            x=int(itnum),
+            y=float(data_dict[itnum]),
+        ))
 
     return ret
 
@@ -187,7 +199,7 @@ def get_svgs_from_output(outputs, output_names, simplified=False):
             op = outputs[i][output_num]
             on = output_names[i][output_num]
 
-            figure_arrs.append(create_figure_data(op))
+            figure_arrs.append(create_figure_data_arr(op))
             line_names.append(line_template_str[i].format(on))
 
         if not figure_arrs:
@@ -198,6 +210,51 @@ def get_svgs_from_output(outputs, output_names, simplified=False):
         )
 
     return svgs
+
+
+def get_figures_from_output(outputs, output_names, simplified=False):
+    '''
+    Parses all outputs of one network and saves them as JSON to be used in JS,
+    aggregated by different types (loss, accuracy, other).
+    '''
+    disp_config = get_disp_config()
+
+    # Partition outputs into 'loss', 'accuracy', 'other'
+    # contains index pairs: 0/1 (training/test) and output_num
+    indices = {disp_type: [] for disp_type in disp_config}
+
+    # Train, test
+    for i in range(2):
+        for output_num, output_name in output_names[i].iteritems():
+            disp_type = filter_disp_type(disp_config, output_name)
+            indices[disp_type].append([i, output_num])
+
+    figures = {}
+    # Collect data
+    for disp_type, dc in disp_config.iteritems():
+        figure_data = []
+        line_template_str = ['Train {0}', 'Test {0}']
+
+        for i, output_num in indices[disp_type]:
+            op = outputs[i][output_num]
+            on = output_names[i][output_num]
+
+            figure_data.append(dict(
+                key=line_template_str[i].format(on),
+                values=create_figure_data_json(op),
+            ))
+
+        if not figure_data:
+            continue
+
+        figures[disp_type] = dict(
+            name=dc['name'],
+            xlabel='Iteration number',
+            ylabel=dc['yaxis_name'],
+            figure_data=figure_data,
+        )
+
+    return figures
 
 
 def plot_svg_net_weights(weights_arr, title, xlabel, ylabel):

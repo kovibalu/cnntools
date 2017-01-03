@@ -2,6 +2,10 @@
 {% load compress %}
 {% load humanize %}
 
+{% block css %}{{ block.super }}
+<link href="{{ STATIC_URL }}css/nv.d3.min.css" rel="stylesheet" type="text/css"/>
+{% endblock %}
+
 {% block header %}
 <div class="jumbotron subhead" id="overview">
 	<div class="container">
@@ -32,4 +36,16 @@
 </section>
 {% endfor %}
 
+{% endblock %}
+
+{% block scripts %}{{ block.super }}
+<script type="text/javascript" src="{{ STATIC_URL }}js/d3.v3.min.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/nv.d3.min.js"></script>
+<script>
+	window.figures = JSON.parse('{{ figures_json|safe }}')
+</script>
+
+{% compress js %}
+<script type="text/coffeescript" src="{{ STATIC_URL }}js/cnntools/figures.coffee"></script>
+{% endcompress %}
 {% endblock %}
