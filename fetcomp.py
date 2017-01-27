@@ -1,13 +1,14 @@
 import os
 
-from progressbar import ProgressBar
-
+from cnntools.common_utils import iter_batch, progress_bar_widgets
 from cnntools.descriptor_aggregator import DescriptorAggregator
 from cnntools.descstore import DescriptorStoreHdf5
 from cnntools.models import CaffeCNNSnapshot
-from cnntools.redis_aggregator import patch_interrupt_signal, detach_patch_interrupt_signal
+from cnntools.redis_aggregator import (detach_patch_interrupt_signal,
+                                       patch_interrupt_signal)
 from cnntools.tasks import compute_cnn_features_gpu_task
-from cnntools.common_utils import iter_batch, progress_bar_widgets
+from cnntools.utils import RedisItemKey
+from progressbar import ProgressBar
 
 
 def get_snapshot_id(caffe_cnn, snapshot_id):
@@ -157,6 +158,20 @@ def dispatch_feature_comp(
         pbar.finish()
 
 
+def extract_item_ids(item_type, item_ids):
+    # If we are using redis objects instead of database objects, we need to
+    # extract the object IDs from the redis keys
+    if item_type == 'redis':
+        all_ids = {
+            RedisItemKey.create_from_key(key).item_id
+            for key in item_ids
+        }
+    else:
+        all_ids = set(item_ids)
+
+    return all_ids
+
+
 def aggregate_feature_comp(
     desc_rootpath,
     item_type,
@@ -179,11 +194,16 @@ def aggregate_feature_comp(
     ]
 
     aggregator = DescriptorAggregator(
-        feature_name_list, dirname_list, num_dims_list, verbose=verbose
+        feature_name_list=feature_name_list, filename_list=dirname_list,
+        num_dims_list=num_dims_list, verbose=verbose
     )
     aggregator.load(desc_rootpath, readonly=False)
     task_id = get_task_id(slug, feature_name_list)
-    ret = aggregator.run(item_ids, task_id, aggr_batchsize=aggr_batchsize)
+
+    # If we use 'redis' objects, this is important
+    all_ids = extract_item_ids(item_type=item_type, item_ids=item_ids)
+    ret = aggregator.run(
+        all_ids=all_ids, task_id=task_id, aggr_batchsize=aggr_batchsize)
 
     if handle_interrupt_signal:
         detach_patch_interrupt_signal()
@@ -193,12 +213,19 @@ def aggregate_feature_comp(
 
 def retrieve_features(
     desc_rootpath,
+    item_type,
     item_ids,
     feature_name_list,
     slug,
     verbose=False,
 ):
     ret_item_ids = item_ids is None
+    if item_ids is None:
+        item_ids_to_get = None
+    else:
+        # If we use 'redis' objects, this is important
+        item_ids_to_get = extract_item_ids(item_type=item_type, item_ids=item_ids)
+
     features = {}
     for feature_name in feature_name_list:
         filename = get_descstore_filename(slug, feature_name)
@@ -208,16 +235,16 @@ def retrieve_features(
             verbose=verbose,
         )
         # Will be called only once
-        if item_ids is None:
-            item_ids = src_store.ids[...]
+        if item_ids_to_get is None:
+            item_ids_to_get = src_store.ids[...]
 
         features[feature_name] = src_store.block_get(
-            item_ids, show_progress=verbose
+            item_ids_to_get, show_progress=verbose
         )
         del src_store
 
     if ret_item_ids:
-        return item_ids, features
+        return item_ids_to_get, features
     else:
         return features
 
@@ -288,25 +315,25 @@ def compute_features(
         single_feature = True
 
     dispatch_feature_comp(
-        desc_rootpath,
-        item_type,
-        item_ids_set,
-        node_batchsize,
-        feature_name_list,
-        num_dims_list,
-        fetcomp_func,
-        fetcomp_kwargs,
-        slug,
+        desc_rootpath=desc_rootpath,
+        item_type=item_type,
+        item_ids=item_ids_set,
+        node_batchsize=node_batchsize,
+        feature_name_list=feature_name_list,
+        num_dims_list=num_dims_list,
+        fetcomp_func=fetcomp_func,
+        fetcomp_kwargs=fetcomp_kwargs,
+        slug=slug,
         verbose=verbose,
     )
     was_interrupted = not aggregate_feature_comp(
-        desc_rootpath,
-        item_type,
-        item_ids_set,
-        feature_name_list,
-        num_dims_list,
-        aggr_batchsize,
-        slug,
+        desc_rootpath=desc_rootpath,
+        item_type=item_type,
+        item_ids=item_ids_set,
+        feature_name_list=feature_name_list,
+        num_dims_list=num_dims_list,
+        aggr_batchsize=aggr_batchsize,
+        slug=slug,
         handle_interrupt_signal=handle_interrupt_signal,
         verbose=verbose,
     )
@@ -315,10 +342,11 @@ def compute_features(
 
     # The order of the item ids is important!
     fets = retrieve_features(
-        desc_rootpath,
-        item_ids,
-        feature_name_list,
-        slug,
+        desc_rootpath=desc_rootpath,
+        item_type=item_type,
+        item_ids=item_ids,
+        feature_name_list=feature_name_list,
+        slug=slug,
         verbose=verbose,
     )
     if single_feature:

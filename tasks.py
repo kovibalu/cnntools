@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 
+import redis
 from celery import shared_task
 from cnntools import packer
 from cnntools.common_utils import ensuredir, import_function, progress_bar
@@ -81,6 +82,17 @@ def start_training_task(model_name, model_file_content, solver_file_content,
     )
 
 
+class RedisItem():
+    def __init__(self, key, value):
+        from cnntools.utils import RedisItemKey
+        self.item_key = RedisItemKey.create_from_key(key)
+        self.value = value
+
+    @property
+    def id(self):
+        return self.item_key.item_id
+
+
 @shared_task(queue='gpu')
 def compute_cnn_features_gpu_task(
     item_type,
@@ -97,7 +109,9 @@ def compute_cnn_features_gpu_task(
     disk.
 
     :param item_type: The class for the model which holds the information
-    which we use the retrieve the images the feature will be computed on
+    which we use the retrieve the images the feature will be computed on. This
+    can also be 'redis', which means that we will fetch the item information
+    from redis.
 
     :param task_id: ID of the task which will be used as a key to put the
     batch_id as a completed ID in redis
@@ -105,7 +119,8 @@ def compute_cnn_features_gpu_task(
     :param batch_id: ID of the batch which will be used as a key to put the
     results in redis
 
-    :param id_list: List of item_type IDs
+    :param id_list: List of item_type IDs. If ``item_type`` is 'redis', these
+    should be the redis keys corresponding to the items.
 
     :param feature_name_list: The features' name in the network which will be
     extracted
@@ -125,7 +140,13 @@ def compute_cnn_features_gpu_task(
         kwa['image_dims'], kwa['mean'], device_id
     )
     # This doesn't preserve order!
-    items = item_type.objects.in_bulk(id_list).values()
+    if item_type == 'redis':
+        client = redis.StrictRedis(**settings.REDIS_AGGRO_LOCAL_CONFIG)
+        redis_vals = client.mget(*id_list)
+        client.delete(*id_list)
+        items = [RedisItem(key, value) for key, value in zip(id_list, redis_vals)]
+    else:
+        items = item_type.objects.in_bulk(id_list).values()
 
     fet_trafo_types = get_fet_trafo_types()
 
