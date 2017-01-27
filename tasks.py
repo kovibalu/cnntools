@@ -84,7 +84,7 @@ def start_training_task(model_name, model_file_content, solver_file_content,
 
 class RedisItem():
     def __init__(self, key, value):
-        from cnntools.fetcomp import RedisItemKey
+        from cnntools.utils import RedisItemKey
         self.item_key = RedisItemKey.create_from_key(key)
         self.value = value
 

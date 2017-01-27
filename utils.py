@@ -394,3 +394,25 @@ def gen_net_graph_svg(model_file_content):
         rankdir='LR',
         ext='svg',
     )
+
+
+class RedisItemKey():
+    '''This class is used if we set the item_type to 'redis' instead of using
+    database objects. It represents one item/task's key to work on.'''
+
+    def __init__(self, item_id, batch_id, task_name):
+        self.item_id = int(item_id)
+        self.batch_id = int(batch_id)
+        self.task_name = task_name
+
+    @classmethod
+    def create_from_key(self, key):
+        return RedisItemKey(**json.loads(key))
+
+    def get_redis_key(self):
+        return json.dumps(dict(
+            item_id=self.item_id,
+            batch_id=self.batch_id,
+            task_name=self.task_name,
+        ), sort_keys=True)
+
