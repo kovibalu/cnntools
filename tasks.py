@@ -1,8 +1,8 @@
 import os
-import redis
 
 import numpy as np
 
+import redis
 from celery import shared_task
 from cnntools import packer
 from cnntools.common_utils import ensuredir, import_function, progress_bar
@@ -82,10 +82,15 @@ def start_training_task(model_name, model_file_content, solver_file_content,
     )
 
 
-class RedisObj():
-    def __init__(self, id, value):
-        self.id = id
+class RedisItem():
+    def __init__(self, key, value):
+        from cnntools.fetcomp import RedisItemKey
+        self.item_key = RedisItemKey.create_from_key(key)
         self.value = value
+
+    @property
+    def id(self):
+        return self.item_key.item_id
 
 
 @shared_task(queue='gpu')
@@ -139,7 +144,7 @@ def compute_cnn_features_gpu_task(
         client = redis.StrictRedis(**settings.REDIS_AGGRO_LOCAL_CONFIG)
         redis_vals = client.mget(*id_list)
         client.delete(*id_list)
-        items = [RedisObj(id, value) for id, value in zip(id_list, redis_vals)]
+        items = [RedisItem(key, value) for key, value in zip(id_list, redis_vals)]
     else:
         items = item_type.objects.in_bulk(id_list).values()
 

@@ -1,13 +1,14 @@
+import json
 import os
 
-from progressbar import ProgressBar
-
+from cnntools.common_utils import iter_batch, progress_bar_widgets
 from cnntools.descriptor_aggregator import DescriptorAggregator
 from cnntools.descstore import DescriptorStoreHdf5
 from cnntools.models import CaffeCNNSnapshot
-from cnntools.redis_aggregator import patch_interrupt_signal, detach_patch_interrupt_signal
+from cnntools.redis_aggregator import (detach_patch_interrupt_signal,
+                                       patch_interrupt_signal)
 from cnntools.tasks import compute_cnn_features_gpu_task
-from cnntools.common_utils import iter_batch, progress_bar_widgets
+from progressbar import ProgressBar
 
 
 def get_snapshot_id(caffe_cnn, snapshot_id):
@@ -55,6 +56,27 @@ def get_task_id(slug, feature_name_list):
     return '%stask' % (
         get_redis_key_core(slug, feature_name_list),
     )
+
+
+class RedisItemKey():
+    '''This class is used if we set the item_type to 'redis' instead of using
+    database objects. It represents one item/task's key to work on.'''
+
+    def __init__(self, item_id, batch_id, task_name):
+        self.item_id = int(item_id)
+        self.batch_id = int(batch_id)
+        self.task_name = task_name
+
+    @classmethod
+    def create_from_key(self, key):
+        return RedisItemKey(**json.loads(key))
+
+    def get_redis_key(self):
+        return json.dumps(dict(
+            item_id=self.item_id,
+            batch_id=self.batch_id,
+            task_name=self.task_name,
+        ), sort_keys=True)
 
 
 def get_descstore_dirname(netid, feature_name):
@@ -179,7 +201,8 @@ def aggregate_feature_comp(
     ]
 
     aggregator = DescriptorAggregator(
-        feature_name_list, dirname_list, num_dims_list, verbose=verbose
+        feature_name_list=feature_name_list, filename_list=dirname_list,
+        num_dims_list=num_dims_list, verbose=verbose
     )
     aggregator.load(desc_rootpath, readonly=False)
     task_id = get_task_id(slug, feature_name_list)
