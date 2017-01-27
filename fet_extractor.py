@@ -15,6 +15,10 @@ def load_fet_extractor(
     device_id=0,
     input_scale=1,
 ):
+    # Silence Caffe
+    from os import environ
+    environ['GLOG_minloglevel'] = '2'
+
     add_caffe_to_path()
     import caffe
 
