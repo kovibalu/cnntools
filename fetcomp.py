@@ -162,12 +162,12 @@ def extract_item_ids(item_type, item_ids):
     # If we are using redis objects instead of database objects, we need to
     # extract the object IDs from the redis keys
     if item_type == 'redis':
-        all_ids = {
+        all_ids = [
             RedisItemKey.create_from_key(key).item_id
             for key in item_ids
-        }
+        ]
     else:
-        all_ids = set(item_ids)
+        all_ids = list(item_ids)
 
     return all_ids
 
@@ -224,6 +224,7 @@ def retrieve_features(
         item_ids_to_get = None
     else:
         # If we use 'redis' objects, this is important
+        # Note: The order of item_ids is very important!
         item_ids_to_get = extract_item_ids(item_type=item_type, item_ids=item_ids)
 
     features = {}

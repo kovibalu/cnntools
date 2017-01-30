@@ -92,6 +92,7 @@ class DescriptorAggregator(RedisAggregator):
 
     def run(self, all_ids, task_id, aggr_batchsize):
         '''Returns False if it was interrupted'''
+        all_ids = set(all_ids)
         self.store_buffer_list = [
             DescriptorStoreHdf5Buffer(
                 store, buffer_size=65536, verbose=self.verbose
