@@ -3,8 +3,9 @@ from django.conf import settings
 
 
 class Timer:
-    def __init__(self, message='Execution'):
+    def __init__(self, message='Execution', force_show=False):
         self.message = message
+        self.force_show = force_show
 
     def __enter__(self):
         self.start = timeit.default_timer()
@@ -14,5 +15,6 @@ class Timer:
         self.end = timeit.default_timer()
         self.interval = self.end - self.start
 
-        if hasattr(settings, 'SKIP_TIMER') and not settings.SKIP_TIMER:
+        skip_timer = hasattr(settings, 'SKIP_TIMER') and settings.SKIP_TIMER
+        if not skip_timer or self.force_show:
             print '{} took {:.3f} seconds'.format(self.message, self.interval)
