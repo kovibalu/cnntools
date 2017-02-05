@@ -156,6 +156,10 @@ def setup_solverfile(model_name, model_file_content, solver_file_content,
     # Setting random seed value for reproducible results
     solver_params.random_seed = settings.CAFFE_SEED
 
+    # Silence Caffe
+    from os import environ
+    environ['GLOG_minloglevel'] = '2'
+
     add_caffe_to_path()
     import caffe
     from caffe.proto import caffe_pb2
