@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
-    args = '<netid> <trainingrun_id> <iteration> <weightfile_relpath>'
+    args = '<netid> <weightfile_relpath> <trainingrun_id> <iteration>'
     help = ('Adds a snapshot to the database. If trainingrun_id equals 0, we'
             ' create a dummy trainingrun to accommodate the snapshot.')
 
@@ -44,7 +44,7 @@ class Command(BaseCommand):
                 solver_file_content,
                 deploy_file_content,
                 description='Dummy training run to add snapshot.',
-                100000,
+                final_iteration=100000,
             )
             trainingrun_id = trrun.id
         else:
