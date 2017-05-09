@@ -184,7 +184,7 @@ def compute_cnn_features_gpu_task(
 
         if kwa['fet_trafo_type_id']:
             with Timer('Feature transformation'):
-                # This might add 'img' the the feature list
+                # This might add 'img' to the feature list
                 fetdic = fet_trafo_types[kwa['fet_trafo_type_id']](
                     item, inp, fetdic, feature_name_list,
                     **kwa['fet_trafo_kwargs']
@@ -195,7 +195,8 @@ def compute_cnn_features_gpu_task(
         fets.append((item.id, fetdic))
 
     # Save results in redis
-    batch_ready(task_id, batch_id, packer.packb(fets, settings.API_VERSION))
+    with Timer('Uploading to Redis'):
+        batch_ready(task_id, batch_id, packer.packb(fets, settings.API_VERSION))
 
 
 def _save_image(img_file, filename, format, dimensions):
