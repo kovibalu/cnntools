@@ -1,5 +1,6 @@
 {% if deploy_file_content %}
 <pre class="pre-scrollable">{{ deploy_file_content }}</pre>
+<p><b>Download file: </b><a href="{{ caffe_cnn_trrun.deploy_file_snapshot.url }}">{{ caffe_cnn_trrun.deploy_file_snapshot.file.size|filesizeformat }}</a></p>
 {% else %}
 <p>There is no deploy file associated with this object.</p>
 {% endif %}
