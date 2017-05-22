@@ -1,5 +1,6 @@
 {% if solver_file_content %}
 <pre>{{ solver_file_content }}</pre>
+<p><b>Download file: </b><a href="{{ caffe_cnn_trrun.solver_file_snapshot.url }}">{{ caffe_cnn_trrun.solver_file_snapshot.file.size|filesizeformat }}</a></p>
 {% else %}
 <p>There is no solver file associated with this object.</p>
 {% endif %}
